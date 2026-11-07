@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tu entrada</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main>
+  <div id="ticket" class="card ticket hidden">
+    <p class="sub" id="event"></p>
+    <h1 id="name"></h1>
+    <p id="type" class="sub"></p>
+    <img id="qr" alt="Código QR de la entrada">
+    <div class="code" id="code"></div>
+    <div id="status"></div>
+    <p class="sub">Guarda esta página o una captura. Presenta el QR en la entrada.<br>El código es personal y solo se puede usar una vez.</p>
+    <div class="row" style="justify-content:center">
+      <button onclick="print()">Imprimir / Guardar PDF</button>
+      <a href="/"><button class="secondary" type="button">Nuevo registro</button></a>
+    </div>
+  </div>
+  <div id="err" class="alert bad hidden"></div>
+</main>
+<script>
+  const $ = (id) => document.getElementById(id);
+  const code = new URLSearchParams(location.search).get('code') || '';
+  fetch('/api/tickets/' + encodeURIComponent(code)).then(async (r) => {
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error);
+    const t = d.ticket;
+    $('event').textContent = d.eventName;
+    $('name').textContent = t.full_name;
+    $('type').textContent = `Entrada ${t.ticket_type}` + (t.companions ? ` · +${t.companions} acompañante(s)` : '');
+    $('qr').src = `/api/tickets/${encodeURIComponent(t.code)}/qr.png`;
+    $('code').textContent = t.code;
+    $('status').innerHTML = t.checked_in_at
+      ? `<div class="alert warn">Entrada ya utilizada (${t.checked_in_at} UTC)</div>`
+      : `<div class="alert ok">Entrada válida ✔</div>`;
+    $('ticket').classList.remove('hidden');
+  }).catch((e) => { $('err').textContent = e.message || 'Entrada no encontrada.'; $('err').classList.remove('hidden'); });
+</script>
+</body>
+</html>

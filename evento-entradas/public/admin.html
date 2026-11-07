@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Control de acceso</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+</head>
+<body>
+<main class="wide">
+  <h1>Control de acceso</h1>
+  <p class="sub">Panel de organizadores: escanea el QR o escribe el código para validar la entrada.</p>
+
+  <form id="login" class="card">
+    <label for="token">Token de organizador</label>
+    <input id="token" type="password" required>
+    <label for="staff">Tu nombre (queda registrado en cada validación)</label>
+    <input id="staff" placeholder="Puerta 1 - Ana">
+    <div class="row"><button>Entrar</button></div>
+    <div id="login-err" class="alert bad hidden"></div>
+  </form>
+
+  <div id="panel" class="hidden">
+    <div class="card stats">
+      <div class="stat"><b id="st-reg">0</b><small>Registrados</small></div>
+      <div class="stat"><b id="st-in">0</b><small>Ingresaron</small></div>
+      <div class="stat"><b id="st-people">0</b><small>Personas (con acomp.)</small></div>
+    </div>
+
+    <div class="card">
+      <div id="reader"></div>
+      <div class="row" style="justify-content:center">
+        <button id="cam" type="button">Activar cámara</button>
+      </div>
+      <form id="manual" class="row">
+        <input id="code" placeholder="EVT-XXXXX-XXXXX" style="flex:1;min-width:200px" autocomplete="off">
+        <button>Validar</button>
+      </form>
+      <div id="result" class="alert hidden" role="status"></div>
+    </div>
+
+    <div class="card">
+      <div class="row" style="margin-top:0;justify-content:space-between;align-items:center">
+        <h2 style="margin:0;font-size:1.1rem">Asistentes</h2>
+        <div class="row" style="margin-top:0">
+          <input id="filter" placeholder="Buscar…" style="width:200px">
+          <button id="csv" type="button" class="secondary">Exportar CSV</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Estado</th><th>Nombre</th><th>Correo</th><th>Tipo</th><th>Acomp.</th><th>Código</th><th>Ingreso</th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</main>
+<script>
+  const $ = (id) => document.getElementById(id);
+  let token = sessionStorage.getItem('adminToken') || '';
+  let attendees = [];
+  let lastScan = { code: '', at: 0 };
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const api = (url, opts = {}) => fetch(url, { ...opts, headers: { 'Content-Type': 'application/json', 'x-admin-token': token, ...(opts.headers || {}) } });
+
+  async function load() {
+    const r = await api('/api/attendees');
+    if (r.status === 401) { sessionStorage.removeItem('adminToken'); throw new Error('Token inválido.'); }
+    const d = await r.json();
+    attendees = d.attendees;
+    $('st-reg').textContent = d.stats.registered;
+    $('st-in').textContent = d.stats.checked_in;
+    $('st-people').textContent = d.stats.total_people;
+    render();
+  }
+
+  function render() {
+    const q = $('filter').value.trim().toLowerCase();
+    $('rows').innerHTML = attendees
+      .filter((a) => !q || [a.full_name, a.email, a.code, a.document_id].join(' ').toLowerCase().includes(q))
+      .map((a) => `<tr>
+        <td>${a.checked_in_at ? '<span class="pill ok">Ingresó</span>' : '<span class="pill pending">Pendiente</span>'}</td>
+        <td>${esc(a.full_name)}</td><td>${esc(a.email)}</td><td>${esc(a.ticket_type)}</td>
+        <td>${a.companions}</td><td><code>${esc(a.code)}</code></td>
+        <td>${a.checked_in_at ? esc(a.checked_in_at) + ' · ' + esc(a.checked_in_by) : '—'}</td></tr>`).join('');
+  }
+
+  async function validate(code) {
+    code = code.trim().toUpperCase();
+    if (!code) return;
+    const r = await api('/api/checkin', { method: 'POST', body: JSON.stringify({ code, staff: $('staff').value }) });
+    const d = await r.json();
+    const cls = { ok: 'ok', already_used: 'warn', invalid: 'bad' }[d.status] || 'bad';
+    const a = d.attendee;
+    let html = esc(d.message);
+    if (a) html += `<br>${esc(a.full_name)} · ${esc(a.ticket_type)}${a.companions ? ' · +' + a.companions + ' acomp.' : ''}`;
+    if (d.status === 'already_used') html += `<br>Usada: ${esc(a.checked_in_at)} UTC por ${esc(a.checked_in_by)}`;
+    $('result').className = 'alert ' + cls;
+    $('result').innerHTML = html;
+    if (navigator.vibrate) navigator.vibrate(d.status === 'ok' ? 100 : [200, 100, 200]);
+    load();
+  }
+
+  $('login').onsubmit = async (e) => {
+    e.preventDefault();
+    token = $('token').value;
+    try { await load(); sessionStorage.setItem('adminToken', token); showPanel(); }
+    catch (err) { $('login-err').textContent = err.message; $('login-err').classList.remove('hidden'); }
+  };
+
+  function showPanel() { $('login').classList.add('hidden'); $('panel').classList.remove('hidden'); }
+
+  $('manual').onsubmit = (e) => { e.preventDefault(); validate($('code').value); $('code').value = ''; };
+  $('filter').oninput = render;
+  $('csv').onclick = async () => {
+    const r = await api('/api/attendees.csv');
+    const url = URL.createObjectURL(await r.blob());
+    Object.assign(document.createElement('a'), { href: url, download: 'asistentes.csv' }).click();
+    URL.revokeObjectURL(url);
+  };
+
+  $('cam').onclick = () => {
+    if (!window.Html5QrcodeScanner) return alert('No se pudo cargar el lector de QR. Usa la validación manual.');
+    $('cam').classList.add('hidden');
+    const scanner = new Html5QrcodeScanner('reader', { fps: 10, qrbox: 240 }, false);
+    scanner.render((text) => {
+      // Evita validar el mismo QR varias veces seguidas mientras sigue frente a la cámara.
+      const now = Date.now();
+      if (text === lastScan.code && now - lastScan.at < 4000) return;
+      lastScan = { code: text, at: now };
+      validate(text);
+    });
+  };
+
+  if (token) load().then(showPanel).catch(() => {});
+  setInterval(() => { if (!$('panel').classList.contains('hidden')) load().catch(() => {}); }, 15000);
+</script>
+</body>
+</html>

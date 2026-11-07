@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Registro al evento</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main>
+  <h1 id="event-name">Registro</h1>
+  <p class="sub">Completa tus datos y recibirás tu entrada con código QR.</p>
+
+  <form id="form" class="card" novalidate>
+    <div class="steps"><span id="s1" class="active">1. Tus datos</span><span id="s2">2. Asistencia</span></div>
+
+    <section id="step1">
+      <label for="full_name">Nombre completo *</label>
+      <input id="full_name" name="full_name" required autocomplete="name">
+      <label for="email">Correo electrónico *</label>
+      <input id="email" name="email" type="email" required autocomplete="email">
+      <label for="phone">Teléfono</label>
+      <input id="phone" name="phone" type="tel" autocomplete="tel">
+      <label for="document_id">Documento de identidad</label>
+      <input id="document_id" name="document_id">
+      <div class="row"><button type="button" id="next">Continuar</button></div>
+    </section>
+
+    <section id="step2" class="hidden">
+      <label for="ticket_type">Tipo de entrada *</label>
+      <select id="ticket_type" name="ticket_type" required></select>
+      <label for="companions">Acompañantes</label>
+      <input id="companions" name="companions" type="number" min="0" max="5" value="0">
+      <label for="dietary">Restricciones alimentarias</label>
+      <input id="dietary" name="dietary" placeholder="Vegetariano, alergias…">
+      <label for="notes">Comentarios</label>
+      <textarea id="notes" name="notes"></textarea>
+      <div class="row">
+        <button type="button" class="secondary" id="back">Atrás</button>
+        <button type="submit" id="submit">Obtener mi entrada</button>
+      </div>
+    </section>
+
+    <div id="msg" class="alert bad hidden" role="alert"></div>
+  </form>
+</main>
+<script>
+  const $ = (id) => document.getElementById(id);
+  const showError = (t) => { $('msg').textContent = t; $('msg').classList.remove('hidden'); };
+
+  fetch('/api/config').then((r) => r.json()).then((c) => {
+    $('event-name').textContent = 'Registro · ' + c.eventName;
+    document.title = 'Registro · ' + c.eventName;
+    $('ticket_type').innerHTML = c.ticketTypes.map((t) => `<option>${t}</option>`).join('');
+  });
+
+  function go(step) {
+    $('step1').classList.toggle('hidden', step !== 1);
+    $('step2').classList.toggle('hidden', step !== 2);
+    $('s1').classList.toggle('active', step === 1);
+    $('s2').classList.toggle('active', step === 2);
+    $('msg').classList.add('hidden');
+  }
+
+  $('next').onclick = () => {
+    if ($('full_name').value.trim().length < 3) return showError('Escribe tu nombre completo.');
+    if (!$('email').checkValidity() || !$('email').value) return showError('Escribe un correo válido.');
+    go(2);
+  };
+  $('back').onclick = () => go(1);
+
+  $('form').onsubmit = async (e) => {
+    e.preventDefault();
+    $('submit').disabled = true;
+    try {
+      const body = Object.fromEntries(new FormData($('form')));
+      const r = await fetch('/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || 'No se pudo completar el registro.');
+      location.href = data.ticketUrl;
+    } catch (err) {
+      showError(err.message);
+      $('submit').disabled = false;
+    }
+  };
+</script>
+</body>
+</html>

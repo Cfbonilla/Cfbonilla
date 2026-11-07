@@ -1,0 +1,16 @@
+{
+  "name": "evento-entradas",
+  "version": "1.0.0",
+  "description": "Sistema de registro y control de entradas para eventos con código único y QR",
+  "main": "server.js",
+  "private": true,
+  "scripts": {
+    "start": "node --no-warnings server.js",
+    "test": "node --no-warnings --test test/*.test.js"
+  },
+  "engines": { "node": ">=22.5" },
+  "dependencies": {
+    "express": "^4.21.2",
+    "qrcode": "^1.5.4"
+  }
+}

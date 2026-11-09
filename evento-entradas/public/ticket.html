@@ -3,22 +3,28 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Tu entrada</title>
+  <title>Tu entrada · Navidad Paraíso 2026</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+<header class="brand">
+  <p class="eyebrow">Entrada personal</p>
+  <h1 id="event">Navidad Paraíso 2026</h1>
+</header>
 <main>
   <div id="ticket" class="card ticket hidden">
-    <p class="sub" id="event"></p>
     <h1 id="name"></h1>
-    <p id="type" class="sub"></p>
+    <p id="area" class="sub" style="margin-bottom:8px"></p>
+    <div id="guests-wrap" class="hidden">
+      <strong>Acompañantes</strong>
+      <ul id="guests" class="guests"></ul>
+    </div>
     <img id="qr" alt="Código QR de la entrada">
     <div class="code" id="code"></div>
     <div id="status"></div>
-    <p class="sub">Guarda esta página o una captura. Presenta el QR en la entrada.<br>El código es personal y solo se puede usar una vez.</p>
+    <p class="sub" style="margin-top:14px">Guarda esta página o toma una captura de pantalla y presenta el QR en la entrada.<br>El código es personal y solo se puede usar una vez.</p>
     <div class="row" style="justify-content:center">
       <button onclick="print()">Imprimir / Guardar PDF</button>
-      <a href="/"><button class="secondary" type="button">Nuevo registro</button></a>
     </div>
   </div>
   <div id="err" class="alert bad hidden"></div>
@@ -31,13 +37,18 @@
     if (!r.ok) throw new Error(d.error);
     const t = d.ticket;
     $('event').textContent = d.eventName;
-    $('name').textContent = t.full_name;
-    $('type').textContent = `Entrada ${t.ticket_type}` + (t.companions ? ` · +${t.companions} acompañante(s)` : '');
+    document.title = 'Tu entrada · ' + d.eventName;
+    $('name').textContent = t.worker_name;
+    $('area').textContent = 'Área: ' + t.work_area;
+    if (t.companion_names.length) {
+      for (const g of t.companion_names) $('guests').append(Object.assign(document.createElement('li'), { textContent: g }));
+      $('guests-wrap').classList.remove('hidden');
+    }
     $('qr').src = `/api/tickets/${encodeURIComponent(t.code)}/qr.png`;
     $('code').textContent = t.code;
     $('status').innerHTML = t.checked_in_at
-      ? `<div class="alert warn">Entrada ya utilizada (${t.checked_in_at} UTC)</div>`
-      : `<div class="alert ok">Entrada válida ✔</div>`;
+      ? `<div class="alert warn">Entrada ya utilizada</div>`
+      : `<div class="alert ok">Entrada válida ✔ · ${1 + t.companions} persona(s)</div>`;
     $('ticket').classList.remove('hidden');
   }).catch((e) => { $('err').textContent = e.message || 'Entrada no encontrada.'; $('err').classList.remove('hidden'); });
 </script>

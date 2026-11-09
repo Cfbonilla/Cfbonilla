@@ -15,55 +15,66 @@ function randomCode() {
   return `EVT-${raw.slice(0, 5)}-${raw.slice(5)}`;
 }
 
+// Clave para detectar registros duplicados del mismo trabajador:
+// ignora mayúsculas, tildes y espacios extra ("José  Pérez" == "jose perez").
+function nameKey(name) {
+  return name.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+function rowToRecord(row) {
+  if (!row) return null;
+  const { name_key, companion_names, ...rest } = row;
+  return { ...rest, companion_names: JSON.parse(companion_names || '[]') };
+}
+
 function openDb(file = process.env.DB_FILE || path.join(__dirname, 'data', 'evento.db')) {
   if (file !== ':memory:') fs.mkdirSync(path.dirname(file), { recursive: true });
   const db = new DatabaseSync(file);
   db.exec(`
     PRAGMA journal_mode = WAL;
-    CREATE TABLE IF NOT EXISTS attendees (
-      id             INTEGER PRIMARY KEY AUTOINCREMENT,
-      code           TEXT NOT NULL UNIQUE,
-      full_name      TEXT NOT NULL,
-      email          TEXT NOT NULL UNIQUE COLLATE NOCASE,
-      phone          TEXT,
-      document_id    TEXT UNIQUE,
-      ticket_type    TEXT NOT NULL,
-      companions     INTEGER NOT NULL DEFAULT 0,
-      dietary        TEXT,
-      notes          TEXT,
-      created_at     TEXT NOT NULL DEFAULT (datetime('now')),
-      checked_in_at  TEXT,
-      checked_in_by  TEXT
+    CREATE TABLE IF NOT EXISTS registrations (
+      id               INTEGER PRIMARY KEY AUTOINCREMENT,
+      code             TEXT NOT NULL UNIQUE,
+      worker_name      TEXT NOT NULL,
+      name_key         TEXT NOT NULL UNIQUE,
+      work_area        TEXT NOT NULL,
+      marital_status   TEXT NOT NULL,
+      companions       INTEGER NOT NULL DEFAULT 0,
+      companion_names  TEXT NOT NULL DEFAULT '[]',
+      created_at       TEXT NOT NULL DEFAULT (datetime('now')),
+      checked_in_at    TEXT,
+      checked_in_by    TEXT
     );
   `);
 
   const insertStmt = db.prepare(`
-    INSERT INTO attendees (code, full_name, email, phone, document_id, ticket_type, companions, dietary, notes)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO registrations (code, worker_name, name_key, work_area, marital_status, companions, companion_names)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
   `);
-  const byCode = db.prepare('SELECT * FROM attendees WHERE code = ?');
+  const byCode = db.prepare('SELECT * FROM registrations WHERE code = ?');
   // Check-in atómico: solo actualiza si todavía no se ha usado, evitando dobles ingresos simultáneos.
   const checkInStmt = db.prepare(`
-    UPDATE attendees SET checked_in_at = datetime('now'), checked_in_by = ?
+    UPDATE registrations SET checked_in_at = datetime('now'), checked_in_by = ?
     WHERE code = ? AND checked_in_at IS NULL
   `);
 
   return {
     db,
 
-    register(a) {
+    register(r) {
       // Reintenta si (muy improbablemente) el código aleatorio ya existe.
       for (let attempt = 0; attempt < 5; attempt++) {
         const code = randomCode();
         try {
-          insertStmt.run(code, a.full_name, a.email, a.phone || null, a.document_id || null,
-            a.ticket_type, a.companions || 0, a.dietary || null, a.notes || null);
-          return byCode.get(code);
+          insertStmt.run(code, r.worker_name, nameKey(r.worker_name), r.work_area, r.marital_status,
+            r.companion_names.length, JSON.stringify(r.companion_names));
+          return rowToRecord(byCode.get(code));
         } catch (err) {
           const msg = String(err.message);
-          if (msg.includes('attendees.code')) continue;
-          if (msg.includes('attendees.email')) throw Object.assign(new Error('Este correo ya está registrado.'), { status: 409 });
-          if (msg.includes('attendees.document_id')) throw Object.assign(new Error('Este documento ya está registrado.'), { status: 409 });
+          if (msg.includes('registrations.code')) continue;
+          if (msg.includes('registrations.name_key')) {
+            throw Object.assign(new Error('Este trabajador ya está registrado. Si perdiste tu código, contacta a los organizadores.'), { status: 409 });
+          }
           throw err;
         }
       }
@@ -71,19 +82,19 @@ function openDb(file = process.env.DB_FILE || path.join(__dirname, 'data', 'even
     },
 
     findByCode(code) {
-      return byCode.get(code) || null;
+      return rowToRecord(byCode.get(code));
     },
 
     checkIn(code, by) {
-      const attendee = byCode.get(code);
-      if (!attendee) return { status: 'invalid' };
+      const reg = byCode.get(code);
+      if (!reg) return { status: 'invalid' };
       const result = checkInStmt.run(by || null, code);
-      if (result.changes === 0) return { status: 'already_used', attendee };
-      return { status: 'ok', attendee: byCode.get(code) };
+      if (result.changes === 0) return { status: 'already_used', attendee: rowToRecord(reg) };
+      return { status: 'ok', attendee: rowToRecord(byCode.get(code)) };
     },
 
     list() {
-      return db.prepare('SELECT * FROM attendees ORDER BY created_at DESC, id DESC').all();
+      return db.prepare('SELECT * FROM registrations ORDER BY created_at DESC, id DESC').all().map(rowToRecord);
     },
 
     stats() {
@@ -91,10 +102,10 @@ function openDb(file = process.env.DB_FILE || path.join(__dirname, 'data', 'even
         SELECT COUNT(*) AS registered,
                COALESCE(SUM(checked_in_at IS NOT NULL), 0) AS checked_in,
                COALESCE(SUM(1 + companions), 0) AS total_people
-        FROM attendees
+        FROM registrations
       `).get();
     },
   };
 }
 
-module.exports = { openDb, randomCode, ALPHABET };
+module.exports = { openDb, randomCode, nameKey, ALPHABET };

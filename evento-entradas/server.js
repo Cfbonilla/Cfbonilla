@@ -4,59 +4,64 @@ const path = require('node:path');
 const QRCode = require('qrcode');
 const { openDb } = require('./db');
 
-const TICKET_TYPES = ['General', 'VIP', 'Estudiante', 'Prensa'];
+const MARITAL_STATUSES = ['Soltero/a', 'Casado/a', 'Unión libre', 'Divorciado/a', 'Viudo/a'];
+const MAX_COMPANIONS = Number(process.env.MAX_COMPANIONS) || 5;
 const CODE_RE = /^EVT-[A-Z0-9]{5}-[A-Z0-9]{5}$/;
 
 function normalizeCode(c) {
   return String(c || '').trim().toUpperCase();
 }
 
-function clean(v, max = 200) {
-  return typeof v === 'string' ? v.trim().slice(0, max) : '';
+// Quita espacios sobrantes y limita la longitud.
+function clean(v, max = 120) {
+  return typeof v === 'string' ? v.replace(/\s+/g, ' ').trim().slice(0, max) : '';
 }
 
-function publicTicket(a) {
+function publicTicket(r) {
   return {
-    code: a.code,
-    full_name: a.full_name,
-    ticket_type: a.ticket_type,
-    companions: a.companions,
-    created_at: a.created_at,
-    checked_in_at: a.checked_in_at,
+    code: r.code,
+    worker_name: r.worker_name,
+    work_area: r.work_area,
+    companions: r.companions,
+    companion_names: r.companion_names,
+    created_at: r.created_at,
+    checked_in_at: r.checked_in_at,
   };
 }
 
-function createApp({ store = openDb(), adminToken = process.env.ADMIN_TOKEN, eventName = process.env.EVENT_NAME || 'Mi Evento' } = {}) {
+function createApp({ store = openDb(), adminToken = process.env.ADMIN_TOKEN, eventName = process.env.EVENT_NAME || 'Navidad Paraíso 2026' } = {}) {
   const app = express();
   app.use(express.json({ limit: '20kb' }));
   app.use(express.static(path.join(__dirname, 'public')));
 
-  app.get('/api/config', (_req, res) => res.json({ eventName, ticketTypes: TICKET_TYPES }));
+  app.get('/api/config', (_req, res) => res.json({ eventName, maritalStatuses: MARITAL_STATUSES, maxCompanions: MAX_COMPANIONS }));
 
-  // 1) Registro de usuario + 2) detalles de asistencia -> 3) devuelve código único.
+  // 1) Datos del trabajador + 2) acompañantes -> 3) devuelve código único.
   app.post('/api/register', (req, res) => {
     const b = req.body || {};
+    const names = Array.isArray(b.companion_names) ? b.companion_names.map((n) => clean(n)) : [];
     const data = {
-      full_name: clean(b.full_name, 120),
-      email: clean(b.email, 160).toLowerCase(),
-      phone: clean(b.phone, 40),
-      document_id: clean(b.document_id, 40).toUpperCase().replace(/[\s.-]/g, ''),
-      ticket_type: clean(b.ticket_type, 40),
-      companions: Number.parseInt(b.companions ?? 0, 10),
-      dietary: clean(b.dietary, 200),
-      notes: clean(b.notes, 500),
+      worker_name: clean(b.worker_name),
+      work_area: clean(b.work_area, 80),
+      marital_status: clean(b.marital_status, 40),
+      companion_names: names,
     };
+    const companions = Number.parseInt(b.companions ?? names.length, 10);
 
     const errors = [];
-    if (data.full_name.length < 3) errors.push('El nombre es obligatorio.');
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) errors.push('El correo no es válido.');
-    if (!TICKET_TYPES.includes(data.ticket_type)) errors.push('Tipo de entrada no válido.');
-    if (!Number.isInteger(data.companions) || data.companions < 0 || data.companions > 5) errors.push('Acompañantes debe ser entre 0 y 5.');
+    if (data.worker_name.length < 3) errors.push('El nombre del trabajador es obligatorio.');
+    if (data.work_area.length < 2) errors.push('El área de trabajo es obligatoria.');
+    if (!MARITAL_STATUSES.includes(data.marital_status)) errors.push('Selecciona un estado civil.');
+    if (!Number.isInteger(companions) || companions < 0 || companions > MAX_COMPANIONS) {
+      errors.push(`Acompañantes debe ser entre 0 y ${MAX_COMPANIONS}.`);
+    } else if (names.length !== companions || names.some((n) => n.length < 3)) {
+      errors.push('Escribe el nombre completo de cada acompañante.');
+    }
     if (errors.length) return res.status(400).json({ error: errors.join(' ') });
 
     try {
-      const attendee = store.register(data);
-      res.status(201).json({ ticket: publicTicket(attendee), ticketUrl: `/ticket.html?code=${attendee.code}` });
+      const reg = store.register(data);
+      res.status(201).json({ ticket: publicTicket(reg), ticketUrl: `/ticket.html?code=${reg.code}` });
     } catch (err) {
       res.status(err.status || 500).json({ error: err.status ? err.message : 'Error interno.' });
     }
@@ -64,9 +69,9 @@ function createApp({ store = openDb(), adminToken = process.env.ADMIN_TOKEN, eve
 
   // Consulta pública de una entrada (solo con el código, que es secreto e impredecible).
   app.get('/api/tickets/:code', (req, res) => {
-    const a = store.findByCode(normalizeCode(req.params.code));
-    if (!a) return res.status(404).json({ error: 'Entrada no encontrada.' });
-    res.json({ ticket: publicTicket(a), eventName });
+    const r = store.findByCode(normalizeCode(req.params.code));
+    if (!r) return res.status(404).json({ error: 'Entrada no encontrada.' });
+    res.json({ ticket: publicTicket(r), eventName });
   });
 
   app.get('/api/tickets/:code/qr.png', async (req, res) => {
@@ -91,7 +96,7 @@ function createApp({ store = openDb(), adminToken = process.env.ADMIN_TOKEN, eve
     if (!CODE_RE.test(code)) return res.status(400).json({ status: 'invalid', message: 'Formato de código inválido.' });
     const result = store.checkIn(code, clean(req.body?.staff, 60) || 'organizador');
     const messages = {
-      ok: 'Acceso permitido. Bienvenido/a.',
+      ok: 'Acceso permitido. ¡Bienvenido/a!',
       already_used: 'ATENCIÓN: esta entrada ya fue usada.',
       invalid: 'Código no registrado. Acceso denegado.',
     };
@@ -104,13 +109,19 @@ function createApp({ store = openDb(), adminToken = process.env.ADMIN_TOKEN, eve
   });
 
   app.get('/api/attendees.csv', requireAdmin, (_req, res) => {
-    const cols = ['code', 'full_name', 'email', 'phone', 'document_id', 'ticket_type', 'companions', 'dietary', 'notes', 'created_at', 'checked_in_at', 'checked_in_by'];
+    const cols = [
+      ['code', 'Código'], ['worker_name', 'Trabajador'], ['work_area', 'Área'], ['marital_status', 'Estado civil'],
+      ['companions', 'Acompañantes'], ['companion_names', 'Nombres de acompañantes'],
+      ['created_at', 'Registrado (UTC)'], ['checked_in_at', 'Ingresó (UTC)'], ['checked_in_by', 'Validado por'],
+    ];
     const esc = (v) => {
-      let s = v == null ? '' : String(v);
+      let s = v == null ? '' : Array.isArray(v) ? v.join('; ') : String(v);
       if (/^[=+\-@]/.test(s)) s = `'${s}`; // evita inyección de fórmulas en Excel
       return `"${s.replace(/"/g, '""')}"`;
     };
-    const csv = [cols.join(','), ...store.list().map((r) => cols.map((c) => esc(r[c])).join(','))].join('\n');
+    const rows = store.list().map((r) => cols.map(([k]) => esc(r[k])).join(';'));
+    // Separador ";" para que Excel en español lo abra en columnas directamente.
+    const csv = [cols.map(([, h]) => esc(h)).join(';'), ...rows].join('\r\n');
     res.type('text/csv').attachment('asistentes.csv').send('﻿' + csv);
   });
 
@@ -125,9 +136,9 @@ if (require.main === module) {
   }
   const port = Number(process.env.PORT) || 3000;
   createApp({ adminToken }).listen(port, () => {
-    console.log(`Registro:     http://localhost:${port}/`);
+    console.log(`Registro:      http://localhost:${port}/`);
     console.log(`Organizadores: http://localhost:${port}/admin.html`);
   });
 }
 
-module.exports = { createApp };
+module.exports = { createApp, MARITAL_STATUSES };

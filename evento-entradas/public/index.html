@@ -3,38 +3,36 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Registro al evento</title>
+  <title>Registro · Navidad Paraíso 2026</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+<header class="brand">
+  <p class="eyebrow">Registro de trabajadores</p>
+  <h1 id="event-name">Navidad Paraíso 2026</h1>
+</header>
 <main>
-  <h1 id="event-name">Registro</h1>
-  <p class="sub">Completa tus datos y recibirás tu entrada con código QR.</p>
+  <p class="sub">Completa tus datos y recibirás tu entrada con código QR para presentar el día del evento.</p>
 
   <form id="form" class="card" novalidate>
-    <div class="steps"><span id="s1" class="active">1. Tus datos</span><span id="s2">2. Asistencia</span></div>
+    <div class="steps"><span id="s1" class="active">1. Tus datos</span><span id="s2">2. Acompañantes</span></div>
 
     <section id="step1">
-      <label for="full_name">Nombre completo *</label>
-      <input id="full_name" name="full_name" required autocomplete="name">
-      <label for="email">Correo electrónico *</label>
-      <input id="email" name="email" type="email" required autocomplete="email">
-      <label for="phone">Teléfono</label>
-      <input id="phone" name="phone" type="tel" autocomplete="tel">
-      <label for="document_id">Documento de identidad</label>
-      <input id="document_id" name="document_id">
+      <label for="worker_name">Nombre del trabajador *</label>
+      <input id="worker_name" name="worker_name" required autocomplete="name" placeholder="Nombre y apellidos">
+      <label for="work_area">Área de trabajo *</label>
+      <input id="work_area" name="work_area" required placeholder="Ej. Producción, Administración…">
+      <label for="marital_status">Estado civil *</label>
+      <select id="marital_status" name="marital_status" required>
+        <option value="">Selecciona…</option>
+      </select>
       <div class="row"><button type="button" id="next">Continuar</button></div>
     </section>
 
     <section id="step2" class="hidden">
-      <label for="ticket_type">Tipo de entrada *</label>
-      <select id="ticket_type" name="ticket_type" required></select>
-      <label for="companions">Acompañantes</label>
-      <input id="companions" name="companions" type="number" min="0" max="5" value="0">
-      <label for="dietary">Restricciones alimentarias</label>
-      <input id="dietary" name="dietary" placeholder="Vegetariano, alergias…">
-      <label for="notes">Comentarios</label>
-      <textarea id="notes" name="notes"></textarea>
+      <label for="companions">Número de acompañantes</label>
+      <select id="companions" name="companions"></select>
+      <div id="guest-fields"></div>
       <div class="row">
         <button type="button" class="secondary" id="back">Atrás</button>
         <button type="submit" id="submit">Obtener mi entrada</button>
@@ -49,10 +47,23 @@
   const showError = (t) => { $('msg').textContent = t; $('msg').classList.remove('hidden'); };
 
   fetch('/api/config').then((r) => r.json()).then((c) => {
-    $('event-name').textContent = 'Registro · ' + c.eventName;
+    $('event-name').textContent = c.eventName;
     document.title = 'Registro · ' + c.eventName;
-    $('ticket_type').innerHTML = c.ticketTypes.map((t) => `<option>${t}</option>`).join('');
+    for (const s of c.maritalStatuses) $('marital_status').add(new Option(s, s));
+    for (let i = 0; i <= c.maxCompanions; i++) $('companions').add(new Option(i === 0 ? 'Ninguno' : String(i), i));
   });
+
+  // Un campo de nombre por cada acompañante (conserva lo ya escrito al cambiar el número).
+  $('companions').onchange = () => {
+    const n = Number($('companions').value);
+    const prev = [...document.querySelectorAll('.guest')].map((i) => i.value);
+    $('guest-fields').innerHTML = '';
+    for (let i = 0; i < n; i++) {
+      const label = Object.assign(document.createElement('label'), { htmlFor: 'guest' + i, textContent: `Nombre del acompañante ${i + 1} *` });
+      const input = Object.assign(document.createElement('input'), { id: 'guest' + i, className: 'guest', required: true, value: prev[i] || '' });
+      $('guest-fields').append(label, input);
+    }
+  };
 
   function go(step) {
     $('step1').classList.toggle('hidden', step !== 1);
@@ -63,17 +74,26 @@
   }
 
   $('next').onclick = () => {
-    if ($('full_name').value.trim().length < 3) return showError('Escribe tu nombre completo.');
-    if (!$('email').checkValidity() || !$('email').value) return showError('Escribe un correo válido.');
+    if ($('worker_name').value.trim().length < 3) return showError('Escribe tu nombre completo.');
+    if ($('work_area').value.trim().length < 2) return showError('Escribe tu área de trabajo.');
+    if (!$('marital_status').value) return showError('Selecciona tu estado civil.');
     go(2);
   };
   $('back').onclick = () => go(1);
 
   $('form').onsubmit = async (e) => {
     e.preventDefault();
+    const companion_names = [...document.querySelectorAll('.guest')].map((i) => i.value.trim());
+    if (companion_names.some((n) => n.length < 3)) return showError('Escribe el nombre completo de cada acompañante.');
     $('submit').disabled = true;
     try {
-      const body = Object.fromEntries(new FormData($('form')));
+      const body = {
+        worker_name: $('worker_name').value,
+        work_area: $('work_area').value,
+        marital_status: $('marital_status').value,
+        companions: companion_names.length,
+        companion_names,
+      };
       const r = await fetch('/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || 'No se pudo completar el registro.');

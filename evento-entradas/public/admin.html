@@ -3,29 +3,30 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Control de acceso</title>
+  <title>Control de acceso · Navidad Paraíso 2026</title>
   <link rel="stylesheet" href="styles.css">
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 </head>
 <body>
+<header class="brand">
+  <p class="eyebrow">Control de acceso · Organizadores</p>
+  <h1 id="event">Navidad Paraíso 2026</h1>
+</header>
 <main class="wide">
-  <h1>Control de acceso</h1>
-  <p class="sub">Panel de organizadores: escanea el QR o escribe el código para validar la entrada.</p>
-
-  <form id="login" class="card">
-    <label for="token">Token de organizador</label>
+  <form id="login" class="card" style="max-width:480px;margin:0 auto">
+    <label for="token">Contraseña de organizador</label>
     <input id="token" type="password" required>
     <label for="staff">Tu nombre (queda registrado en cada validación)</label>
-    <input id="staff" placeholder="Puerta 1 - Ana">
+    <input id="staff" placeholder="Ej. Puerta 1 - Ana">
     <div class="row"><button>Entrar</button></div>
     <div id="login-err" class="alert bad hidden"></div>
   </form>
 
   <div id="panel" class="hidden">
     <div class="card stats">
-      <div class="stat"><b id="st-reg">0</b><small>Registrados</small></div>
-      <div class="stat"><b id="st-in">0</b><small>Ingresaron</small></div>
-      <div class="stat"><b id="st-people">0</b><small>Personas (con acomp.)</small></div>
+      <div class="stat"><b id="st-reg">0</b><small>Trabajadores registrados</small></div>
+      <div class="stat"><b id="st-in">0</b><small>Ya ingresaron</small></div>
+      <div class="stat"><b id="st-people">0</b><small>Personas en total (con acomp.)</small></div>
     </div>
 
     <div class="card">
@@ -42,15 +43,15 @@
 
     <div class="card">
       <div class="row" style="margin-top:0;justify-content:space-between;align-items:center">
-        <h2 style="margin:0;font-size:1.1rem">Asistentes</h2>
+        <h2 style="margin:0;font-size:1.1rem">Trabajadores registrados</h2>
         <div class="row" style="margin-top:0">
-          <input id="filter" placeholder="Buscar…" style="width:200px">
-          <button id="csv" type="button" class="secondary">Exportar CSV</button>
+          <input id="filter" placeholder="Buscar nombre, área, código…" style="width:240px">
+          <button id="csv" type="button" class="secondary">Exportar a Excel (CSV)</button>
         </div>
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Estado</th><th>Nombre</th><th>Correo</th><th>Tipo</th><th>Acomp.</th><th>Código</th><th>Ingreso</th></tr></thead>
+          <thead><tr><th>Estado</th><th>Trabajador</th><th>Área</th><th>Estado civil</th><th>Acomp.</th><th>Nombres de acompañantes</th><th>Código</th><th>Ingreso</th></tr></thead>
           <tbody id="rows"></tbody>
         </table>
       </div>
@@ -65,9 +66,11 @@
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const api = (url, opts = {}) => fetch(url, { ...opts, headers: { 'Content-Type': 'application/json', 'x-admin-token': token, ...(opts.headers || {}) } });
 
+  fetch('/api/config').then((r) => r.json()).then((c) => { $('event').textContent = c.eventName; });
+
   async function load() {
     const r = await api('/api/attendees');
-    if (r.status === 401) { sessionStorage.removeItem('adminToken'); throw new Error('Token inválido.'); }
+    if (r.status === 401) { sessionStorage.removeItem('adminToken'); throw new Error('Contraseña incorrecta.'); }
     const d = await r.json();
     attendees = d.attendees;
     $('st-reg').textContent = d.stats.registered;
@@ -79,12 +82,13 @@
   function render() {
     const q = $('filter').value.trim().toLowerCase();
     $('rows').innerHTML = attendees
-      .filter((a) => !q || [a.full_name, a.email, a.code, a.document_id].join(' ').toLowerCase().includes(q))
+      .filter((a) => !q || [a.worker_name, a.work_area, a.code, ...a.companion_names].join(' ').toLowerCase().includes(q))
       .map((a) => `<tr>
         <td>${a.checked_in_at ? '<span class="pill ok">Ingresó</span>' : '<span class="pill pending">Pendiente</span>'}</td>
-        <td>${esc(a.full_name)}</td><td>${esc(a.email)}</td><td>${esc(a.ticket_type)}</td>
-        <td>${a.companions}</td><td><code>${esc(a.code)}</code></td>
-        <td>${a.checked_in_at ? esc(a.checked_in_at) + ' · ' + esc(a.checked_in_by) : '—'}</td></tr>`).join('');
+        <td>${esc(a.worker_name)}</td><td>${esc(a.work_area)}</td><td class="nowrap">${esc(a.marital_status)}</td>
+        <td>${a.companions}</td><td>${a.companion_names.map(esc).join('<br>') || '—'}</td>
+        <td class="nowrap"><code>${esc(a.code)}</code></td>
+        <td class="nowrap">${a.checked_in_at ? esc(a.checked_in_at) + '<br>' + esc(a.checked_in_by) : '—'}</td></tr>`).join('');
   }
 
   async function validate(code) {
@@ -95,7 +99,10 @@
     const cls = { ok: 'ok', already_used: 'warn', invalid: 'bad' }[d.status] || 'bad';
     const a = d.attendee;
     let html = esc(d.message);
-    if (a) html += `<br>${esc(a.full_name)} · ${esc(a.ticket_type)}${a.companions ? ' · +' + a.companions + ' acomp.' : ''}`;
+    if (a) {
+      html += `<br>${esc(a.worker_name)} · ${esc(a.work_area)} · ${1 + a.companions} persona(s)`;
+      if (a.companion_names.length) html += `<br>Acompañantes: ${a.companion_names.map(esc).join(', ')}`;
+    }
     if (d.status === 'already_used') html += `<br>Usada: ${esc(a.checked_in_at)} UTC por ${esc(a.checked_in_by)}`;
     $('result').className = 'alert ' + cls;
     $('result').innerHTML = html;

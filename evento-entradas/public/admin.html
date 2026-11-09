@@ -3,22 +3,31 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Control de acceso · Navidad Paraíso 2026</title>
+  <title>Control de acceso · Registro de entrada a eventos</title>
+  <link rel="icon" href="sprite.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap">
   <link rel="stylesheet" href="styles.css">
+  <script src="theme.js"></script>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 </head>
 <body>
 <header class="brand">
-  <p class="eyebrow">Control de acceso · Organizadores</p>
-  <h1 id="event">Navidad Paraíso 2026</h1>
+  <div class="topbar"><button id="theme-toggle" type="button" class="secondary">☾ OSCURO</button></div>
+  <img class="sprite" src="sprite.svg" alt="">
+  <h1>Registro de entrada a eventos</h1>
+  <p class="eyebrow">Control de acceso · <span id="event">Navidad Paraíso 2026</span></p>
 </header>
 <main class="wide">
-  <form id="login" class="card" style="max-width:480px;margin:0 auto">
-    <label for="token">Contraseña de organizador</label>
+  <form id="login" class="card" style="max-width:520px;margin:0 auto">
+    <h2>▶ Organizadores</h2>
+    <label for="token">Contraseña</label>
     <input id="token" type="password" required>
-    <label for="staff">Tu nombre (queda registrado en cada validación)</label>
+    <label for="staff">Tu nombre o puerta</label>
     <input id="staff" placeholder="Ej. Puerta 1 - Ana">
-    <div class="row"><button>Entrar</button></div>
+    <p class="hint">Tu nombre queda guardado en cada entrada que valides.</p>
+    <div class="row"><button>Entrar ▶</button></div>
     <div id="login-err" class="alert bad hidden"></div>
   </form>
 
@@ -26,27 +35,29 @@
     <div class="card stats">
       <div class="stat"><b id="st-reg">0</b><small>Trabajadores registrados</small></div>
       <div class="stat"><b id="st-in">0</b><small>Ya ingresaron</small></div>
-      <div class="stat"><b id="st-people">0</b><small>Personas en total (con acomp.)</small></div>
+      <div class="stat"><b id="st-people">0</b><small>Personas en total (con acompañantes)</small></div>
     </div>
 
     <div class="card">
-      <div id="reader"></div>
+      <h2>▶ Validar entrada</h2>
+      <p class="hint">Activa la cámara y apunta al QR, o escribe el código a mano.</p>
+      <div id="reader" style="margin-top:14px"></div>
       <div class="row" style="justify-content:center">
-        <button id="cam" type="button">Activar cámara</button>
+        <button id="cam" type="button">📷 Activar cámara</button>
       </div>
       <form id="manual" class="row">
-        <input id="code" placeholder="EVT-XXXXX-XXXXX" style="flex:1;min-width:200px" autocomplete="off">
+        <input id="code" placeholder="EVT-XXXXX-XXXXX" style="flex:1;min-width:200px" autocomplete="off" aria-label="Código de entrada">
         <button>Validar</button>
       </form>
       <div id="result" class="alert hidden" role="status"></div>
     </div>
 
     <div class="card">
-      <div class="row" style="margin-top:0;justify-content:space-between;align-items:center">
-        <h2 style="margin:0;font-size:1.1rem">Trabajadores registrados</h2>
+      <div class="row" style="margin-top:0;justify-content:space-between">
+        <h2>▶ Registrados</h2>
         <div class="row" style="margin-top:0">
-          <input id="filter" placeholder="Buscar nombre, cédula, área…" style="width:240px">
-          <button id="csv" type="button" class="secondary">Exportar a Excel (CSV)</button>
+          <input id="filter" placeholder="Buscar nombre, cédula, área…" style="width:260px" aria-label="Buscar">
+          <button id="csv" type="button" class="secondary">⬇ Excel (CSV)</button>
         </div>
       </div>
       <div class="table-wrap">
@@ -56,11 +67,22 @@
         </table>
       </div>
     </div>
+
+    <div class="card danger-zone">
+      <h2>⚠ Zona de peligro</h2>
+      <p>Borra <strong>todos</strong> los trabajadores registrados y deja los contadores en cero, para empezar un evento nuevo. Las entradas (QR) que ya se entregaron dejarán de funcionar. <strong>No se puede deshacer.</strong></p>
+      <label class="check" style="font-family:inherit;font-size:20px;margin:0">
+        <input type="checkbox" id="backup" checked> Descargar copia de seguridad (Excel) antes de borrar
+      </label>
+      <div class="row"><button id="reset" type="button" class="danger">✖ Borrar todos los datos</button></div>
+      <div id="reset-result" class="alert hidden" role="status"></div>
+    </div>
   </div>
 </main>
 <script>
   const $ = (id) => document.getElementById(id);
-  let token = sessionStorage.getItem('adminToken') || '';
+  let token = '';
+  try { token = sessionStorage.getItem('adminToken') || ''; } catch (_) {}
   let attendees = [];
   let lastScan = { code: '', at: 0 };
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -70,7 +92,7 @@
 
   async function load() {
     const r = await api('/api/attendees');
-    if (r.status === 401) { sessionStorage.removeItem('adminToken'); throw new Error('Contraseña incorrecta.'); }
+    if (r.status === 401) { try { sessionStorage.removeItem('adminToken'); } catch (_) {} throw new Error('Contraseña incorrecta.'); }
     const d = await r.json();
     attendees = d.attendees;
     $('st-reg').textContent = d.stats.registered;
@@ -81,14 +103,15 @@
 
   function render() {
     const q = $('filter').value.trim().toLowerCase();
-    $('rows').innerHTML = attendees
+    const rows = attendees
       .filter((a) => !q || [a.worker_name, a.id_number, a.work_area, a.code, ...a.companion_names].join(' ').toLowerCase().includes(q))
       .map((a) => `<tr>
         <td>${a.checked_in_at ? '<span class="pill ok">Ingresó</span>' : '<span class="pill pending">Pendiente</span>'}</td>
         <td>${esc(a.worker_name)}</td><td class="nowrap">${esc(a.id_number)}</td><td>${esc(a.work_area)}</td><td class="nowrap">${esc(a.marital_status)}</td>
         <td>${a.companions}</td><td>${a.companion_names.map(esc).join('<br>') || '—'}</td>
-        <td class="nowrap"><code>${esc(a.code)}</code></td>
-        <td class="nowrap">${a.checked_in_at ? esc(a.checked_in_at) + '<br>' + esc(a.checked_in_by) : '—'}</td></tr>`).join('');
+        <td class="nowrap">${esc(a.code)}</td>
+        <td class="nowrap">${a.checked_in_at ? esc(a.checked_in_at) + '<br>' + esc(a.checked_in_by) : '—'}</td></tr>`);
+    $('rows').innerHTML = rows.join('') || '<tr><td colspan="9" style="text-align:center">— Sin registros —</td></tr>';
   }
 
   async function validate(code) {
@@ -98,9 +121,9 @@
     const d = await r.json();
     const cls = { ok: 'ok', already_used: 'warn', invalid: 'bad' }[d.status] || 'bad';
     const a = d.attendee;
-    let html = esc(d.message);
+    let html = `<span class="title">${esc(d.message)}</span>`;
     if (a) {
-      html += `<br>${esc(a.worker_name)} · C.I. ${esc(a.id_number)} · ${esc(a.work_area)} · ${1 + a.companions} persona(s)`;
+      html += `${esc(a.worker_name)} · C.I. ${esc(a.id_number)} · ${esc(a.work_area)} · ${1 + a.companions} persona(s)`;
       if (a.companion_names.length) html += `<br>Acompañantes: ${a.companion_names.map(esc).join(', ')}`;
     }
     if (d.status === 'already_used') html += `<br>Usada: ${esc(a.checked_in_at)} UTC por ${esc(a.checked_in_by)}`;
@@ -110,10 +133,18 @@
     load();
   }
 
+  async function downloadCsv(filename) {
+    const r = await api('/api/attendees.csv');
+    if (!r.ok) throw new Error('No se pudo descargar la copia de seguridad.');
+    const url = URL.createObjectURL(await r.blob());
+    Object.assign(document.createElement('a'), { href: url, download: filename }).click();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  }
+
   $('login').onsubmit = async (e) => {
     e.preventDefault();
     token = $('token').value;
-    try { await load(); sessionStorage.setItem('adminToken', token); showPanel(); }
+    try { await load(); try { sessionStorage.setItem('adminToken', token); } catch (_) {} showPanel(); }
     catch (err) { $('login-err').textContent = err.message; $('login-err').classList.remove('hidden'); }
   };
 
@@ -121,15 +152,38 @@
 
   $('manual').onsubmit = (e) => { e.preventDefault(); validate($('code').value); $('code').value = ''; };
   $('filter').oninput = render;
-  $('csv').onclick = async () => {
-    const r = await api('/api/attendees.csv');
-    const url = URL.createObjectURL(await r.blob());
-    Object.assign(document.createElement('a'), { href: url, download: 'asistentes.csv' }).click();
-    URL.revokeObjectURL(url);
+  $('csv').onclick = () => downloadCsv('asistentes.csv').catch((e) => alert(e.message));
+
+  // Borrar todo: pide escribir BORRAR, descarga copia de seguridad (opcional) y luego borra.
+  $('reset').onclick = async () => {
+    const box = $('reset-result');
+    const answer = prompt(`Vas a borrar ${attendees.length} registro(s). Esto no se puede deshacer.\n\nEscribe BORRAR (en mayúsculas) para confirmar:`);
+    if (answer === null) return;
+    if (answer.trim() !== 'BORRAR') {
+      box.className = 'alert warn'; box.innerHTML = '<span class="title">Cancelado</span>No escribiste BORRAR. No se borró nada.';
+      return;
+    }
+    $('reset').disabled = true;
+    try {
+      if ($('backup').checked && attendees.length) {
+        await downloadCsv(`copia-seguridad-${new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-')}.csv`);
+      }
+      const r = await api('/api/reset', { method: 'POST', body: JSON.stringify({ confirm: 'BORRAR', staff: $('staff').value }) });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || 'No se pudo borrar.');
+      box.className = 'alert ok';
+      box.innerHTML = `<span class="title">★ ¡Nueva partida! ★</span>Se borraron ${d.deleted} registro(s). Todo está en cero.`;
+      $('result').classList.add('hidden');
+      await load();
+    } catch (err) {
+      box.className = 'alert bad'; box.innerHTML = `<span class="title">ERROR</span>${esc(err.message)}`;
+    } finally {
+      $('reset').disabled = false;
+    }
   };
 
   $('cam').onclick = () => {
-    if (!window.Html5QrcodeScanner) return alert('No se pudo cargar el lector de QR. Usa la validación manual.');
+    if (!window.Html5QrcodeScanner) return alert('No se pudo cargar el lector de QR (revisa la conexión a internet). Usa la validación manual.');
     $('cam').classList.add('hidden');
     const scanner = new Html5QrcodeScanner('reader', { fps: 10, qrbox: 240 }, false);
     scanner.render((text) => {

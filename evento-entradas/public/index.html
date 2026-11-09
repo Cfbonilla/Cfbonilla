@@ -3,19 +3,26 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Registro · Navidad Paraíso 2026</title>
+  <title>Registro de entrada a eventos</title>
+  <link rel="icon" href="sprite.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap">
   <link rel="stylesheet" href="styles.css">
+  <script src="theme.js"></script>
 </head>
 <body>
 <header class="brand">
-  <p class="eyebrow">Registro de trabajadores</p>
-  <h1 id="event-name">Navidad Paraíso 2026</h1>
+  <div class="topbar"><button id="theme-toggle" type="button" class="secondary">☾ OSCURO</button></div>
+  <img class="sprite" src="sprite.svg" alt="">
+  <h1>Registro de entrada a eventos</h1>
+  <p class="eyebrow">★ <span id="event-name">Navidad Paraíso 2026</span> ★</p>
 </header>
 <main>
-  <p class="sub">Completa tus datos y recibirás tu entrada con código QR para presentar el día del evento.</p>
+  <p class="intro">Completa los 2 niveles y obtendrás tu <strong>entrada con código QR</strong>. Preséntala en la puerta el día del evento. <span class="blink">▮</span></p>
 
   <form id="form" class="card" novalidate>
-    <div class="steps"><span id="s1" class="active">1. Tus datos</span><span id="s2">2. Acompañantes</span></div>
+    <div class="steps"><span id="s1" class="active">Nivel 1<br>Tus datos</span><span id="s2">Nivel 2<br>Acompañantes</span></div>
 
     <section id="step1">
       <label for="worker_name">Nombre del trabajador *</label>
@@ -28,7 +35,7 @@
       <select id="marital_status" name="marital_status" required>
         <option value="">Selecciona…</option>
       </select>
-      <div class="row"><button type="button" id="next">Continuar</button></div>
+      <div class="row"><button type="button" id="next">Continuar ▶</button></div>
     </section>
 
     <section id="step2" class="hidden">
@@ -36,8 +43,8 @@
       <select id="companions" name="companions"></select>
       <div id="guest-fields"></div>
       <div class="row">
-        <button type="button" class="secondary" id="back">Atrás</button>
-        <button type="submit" id="submit">Obtener mi entrada</button>
+        <button type="button" class="secondary" id="back">◀ Atrás</button>
+        <button type="submit" id="submit">★ Obtener entrada</button>
       </div>
     </section>
 
@@ -50,7 +57,7 @@
 
   fetch('/api/config').then((r) => r.json()).then((c) => {
     $('event-name').textContent = c.eventName;
-    document.title = 'Registro · ' + c.eventName;
+    document.title = 'Registro de entrada a eventos · ' + c.eventName;
     for (const s of c.maritalStatuses) $('marital_status').add(new Option(s, s));
     for (let i = 0; i <= c.maxCompanions; i++) $('companions').add(new Option(i === 0 ? 'Ninguno' : String(i), i));
   });
@@ -61,8 +68,8 @@
     const prev = [...document.querySelectorAll('.guest')].map((i) => i.value);
     $('guest-fields').innerHTML = '';
     for (let i = 0; i < n; i++) {
-      const label = Object.assign(document.createElement('label'), { htmlFor: 'guest' + i, textContent: `Nombre del acompañante ${i + 1} *` });
-      const input = Object.assign(document.createElement('input'), { id: 'guest' + i, className: 'guest', required: true, value: prev[i] || '' });
+      const label = Object.assign(document.createElement('label'), { htmlFor: 'guest' + i, textContent: `Acompañante ${i + 1} *` });
+      const input = Object.assign(document.createElement('input'), { id: 'guest' + i, className: 'guest', required: true, value: prev[i] || '', placeholder: 'Nombre y apellidos' });
       $('guest-fields').append(label, input);
     }
   };

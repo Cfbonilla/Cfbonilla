@@ -1,0 +1,21 @@
+# ============================================================
+#  CONFIGURACIÓN DEL SISTEMA DE ENTRADAS
+#  Edita este archivo con el Bloc de notas (o TextEdit en Mac),
+#  guarda los cambios y vuelve a encender el sistema (npm start).
+#  Las líneas que empiezan con # son comentarios y se ignoran.
+# ============================================================
+
+# Nombre del evento que aparece en el formulario y en las entradas.
+EVENT_NAME=Navidad Paraíso 2026
+
+# Contraseña del panel de organizadores (admin.html).
+# Si la dejas vacía, se genera una contraseña nueva cada vez que enciendes el sistema
+# y aparece en la ventana negra. Ejemplo: ADMIN_TOKEN=MiClaveSegura2026
+# IMPORTANTE: no compartas este archivo ni lo subas a GitHub con la contraseña puesta.
+ADMIN_TOKEN=
+
+# Máximo de acompañantes que puede llevar cada trabajador.
+MAX_COMPANIONS=5
+
+# Puerto de la página (normalmente no hace falta cambiarlo).
+PORT=3000

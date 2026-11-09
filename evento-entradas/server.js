@@ -2,6 +2,13 @@ const express = require('express');
 const crypto = require('node:crypto');
 const path = require('node:path');
 const QRCode = require('qrcode');
+const fs = require('node:fs');
+
+// Carga la configuración del archivo configuracion.txt (si existe).
+// Las variables definidas en el sistema (p. ej. en Railway) tienen prioridad sobre el archivo.
+const CONFIG_FILE = path.join(__dirname, 'configuracion.txt');
+if (fs.existsSync(CONFIG_FILE)) process.loadEnvFile(CONFIG_FILE);
+
 const { openDb } = require('./db');
 
 const MARITAL_STATUSES = ['Soltero/a', 'Casado/a', 'Unión libre', 'Divorciado/a', 'Viudo/a'];
@@ -36,6 +43,7 @@ function publicTicket(r) {
 }
 
 function createApp({ store = openDb(), adminToken = process.env.ADMIN_TOKEN, eventName = process.env.EVENT_NAME || 'Navidad Paraíso 2026' } = {}) {
+  if (!adminToken) throw new Error('Falta la contraseña de organizador (ADMIN_TOKEN).');
   const app = express();
   app.use(express.json({ limit: '20kb' }));
   app.use(express.static(path.join(__dirname, 'public')));
@@ -108,7 +116,7 @@ function createApp({ store = openDb(), adminToken = process.env.ADMIN_TOKEN, eve
     const result = store.checkIn(code, clean(req.body?.staff, 60) || 'organizador');
     const messages = {
       ok: 'Acceso permitido. ¡Bienvenido/a!',
-      already_used: 'ATENCIÓN: esta entrada ya fue usada.',
+      already_used: '¡Atención! Esta entrada ya fue usada.',
       invalid: 'Código no registrado. Acceso denegado.',
     };
     res.status(result.status === 'invalid' ? 404 : result.status === 'already_used' ? 409 : 200)
@@ -117,6 +125,16 @@ function createApp({ store = openDb(), adminToken = process.env.ADMIN_TOKEN, eve
 
   app.get('/api/attendees', requireAdmin, (_req, res) => {
     res.json({ stats: store.stats(), attendees: store.list() });
+  });
+
+  // Borra TODOS los registros. Exige la palabra BORRAR como confirmación para evitar accidentes.
+  app.post('/api/reset', requireAdmin, (req, res) => {
+    if (req.body?.confirm !== 'BORRAR') {
+      return res.status(400).json({ error: 'Para confirmar, escribe BORRAR en mayúsculas.' });
+    }
+    const deleted = store.reset();
+    console.log(`[reinicio] ${deleted} registro(s) borrado(s) por ${clean(req.body?.staff, 60) || 'organizador'}`);
+    res.json({ deleted });
   });
 
   app.get('/api/attendees.csv', requireAdmin, (_req, res) => {

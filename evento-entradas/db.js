@@ -98,6 +98,13 @@ function openDb(file = process.env.DB_FILE || path.join(__dirname, 'data', 'even
       return db.prepare('SELECT * FROM workers ORDER BY created_at DESC, id DESC').all().map(rowToRecord);
     },
 
+    // Borra todos los registros y reinicia los contadores (para empezar un evento nuevo).
+    reset() {
+      const { n } = db.prepare('SELECT COUNT(*) AS n FROM workers').get();
+      db.exec("DELETE FROM workers; DELETE FROM sqlite_sequence WHERE name = 'workers';");
+      return n;
+    },
+
     stats() {
       return db.prepare(`
         SELECT COUNT(*) AS registered,

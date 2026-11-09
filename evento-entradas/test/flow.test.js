@@ -77,6 +77,20 @@ test('registro -> código único -> QR -> validación', async (t) => {
   assert.match(csv, /"1\.234\.567-8"/);
 });
 
+test('reinicio de datos', async (t) => {
+  const { server, req } = await setup();
+  t.after(() => server.close());
+  await req('/api/register', { body: worker });
+  assert.equal((await req('/api/reset', { body: { confirm: 'BORRAR' } })).status, 401);
+  assert.equal((await req('/api/reset', { body: { confirm: 'borrar' }, admin: 'secreto' })).status, 400);
+  const r = await req('/api/reset', { body: { confirm: 'BORRAR' }, admin: 'secreto' });
+  assert.deepEqual(await r.json(), { deleted: 1 });
+  const list = await (await req('/api/attendees', { admin: 'secreto' })).json();
+  assert.deepEqual(list.stats, { registered: 0, checked_in: 0, total_people: 0 });
+  // La misma cédula se puede volver a registrar después del reinicio.
+  assert.equal((await req('/api/register', { body: worker })).status, 201);
+});
+
 test('validación de datos', async (t) => {
   const { server, req } = await setup();
   t.after(() => server.close());

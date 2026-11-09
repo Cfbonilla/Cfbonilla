@@ -45,13 +45,13 @@
       <div class="row" style="margin-top:0;justify-content:space-between;align-items:center">
         <h2 style="margin:0;font-size:1.1rem">Trabajadores registrados</h2>
         <div class="row" style="margin-top:0">
-          <input id="filter" placeholder="Buscar nombre, área, código…" style="width:240px">
+          <input id="filter" placeholder="Buscar nombre, cédula, área…" style="width:240px">
           <button id="csv" type="button" class="secondary">Exportar a Excel (CSV)</button>
         </div>
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Estado</th><th>Trabajador</th><th>Área</th><th>Estado civil</th><th>Acomp.</th><th>Nombres de acompañantes</th><th>Código</th><th>Ingreso</th></tr></thead>
+          <thead><tr><th>Estado</th><th>Trabajador</th><th>Cédula</th><th>Área</th><th>Estado civil</th><th>Acomp.</th><th>Nombres de acompañantes</th><th>Código</th><th>Ingreso</th></tr></thead>
           <tbody id="rows"></tbody>
         </table>
       </div>
@@ -82,10 +82,10 @@
   function render() {
     const q = $('filter').value.trim().toLowerCase();
     $('rows').innerHTML = attendees
-      .filter((a) => !q || [a.worker_name, a.work_area, a.code, ...a.companion_names].join(' ').toLowerCase().includes(q))
+      .filter((a) => !q || [a.worker_name, a.id_number, a.work_area, a.code, ...a.companion_names].join(' ').toLowerCase().includes(q))
       .map((a) => `<tr>
         <td>${a.checked_in_at ? '<span class="pill ok">Ingresó</span>' : '<span class="pill pending">Pendiente</span>'}</td>
-        <td>${esc(a.worker_name)}</td><td>${esc(a.work_area)}</td><td class="nowrap">${esc(a.marital_status)}</td>
+        <td>${esc(a.worker_name)}</td><td class="nowrap">${esc(a.id_number)}</td><td>${esc(a.work_area)}</td><td class="nowrap">${esc(a.marital_status)}</td>
         <td>${a.companions}</td><td>${a.companion_names.map(esc).join('<br>') || '—'}</td>
         <td class="nowrap"><code>${esc(a.code)}</code></td>
         <td class="nowrap">${a.checked_in_at ? esc(a.checked_in_at) + '<br>' + esc(a.checked_in_by) : '—'}</td></tr>`).join('');
@@ -100,7 +100,7 @@
     const a = d.attendee;
     let html = esc(d.message);
     if (a) {
-      html += `<br>${esc(a.worker_name)} · ${esc(a.work_area)} · ${1 + a.companions} persona(s)`;
+      html += `<br>${esc(a.worker_name)} · C.I. ${esc(a.id_number)} · ${esc(a.work_area)} · ${1 + a.companions} persona(s)`;
       if (a.companion_names.length) html += `<br>Acompañantes: ${a.companion_names.map(esc).join(', ')}`;
     }
     if (d.status === 'already_used') html += `<br>Usada: ${esc(a.checked_in_at)} UTC por ${esc(a.checked_in_by)}`;

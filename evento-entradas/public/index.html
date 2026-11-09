@@ -20,6 +20,8 @@
     <section id="step1">
       <label for="worker_name">Nombre del trabajador *</label>
       <input id="worker_name" name="worker_name" required autocomplete="name" placeholder="Nombre y apellidos">
+      <label for="id_number">Número de cédula *</label>
+      <input id="id_number" name="id_number" required inputmode="numeric" autocomplete="off" placeholder="Ej. 1234567890">
       <label for="work_area">Área de trabajo *</label>
       <input id="work_area" name="work_area" required placeholder="Ej. Producción, Administración…">
       <label for="marital_status">Estado civil *</label>
@@ -75,6 +77,7 @@
 
   $('next').onclick = () => {
     if ($('worker_name').value.trim().length < 3) return showError('Escribe tu nombre completo.');
+    if ($('id_number').value.replace(/[^0-9a-z]/gi, '').length < 5) return showError('Escribe tu número de cédula.');
     if ($('work_area').value.trim().length < 2) return showError('Escribe tu área de trabajo.');
     if (!$('marital_status').value) return showError('Selecciona tu estado civil.');
     go(2);
@@ -89,6 +92,7 @@
     try {
       const body = {
         worker_name: $('worker_name').value,
+        id_number: $('id_number').value,
         work_area: $('work_area').value,
         marital_status: $('marital_status').value,
         companions: companion_names.length,

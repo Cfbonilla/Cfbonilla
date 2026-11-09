@@ -17,10 +17,16 @@ function clean(v, max = 120) {
   return typeof v === 'string' ? v.replace(/\s+/g, ' ').trim().slice(0, max) : '';
 }
 
+// En la entrada pública solo se muestran los últimos 4 dígitos de la cédula.
+function maskId(id) {
+  return '••••' + String(id || '').replace(/[^0-9A-Z]/gi, '').slice(-4);
+}
+
 function publicTicket(r) {
   return {
     code: r.code,
     worker_name: r.worker_name,
+    id_masked: maskId(r.id_number),
     work_area: r.work_area,
     companions: r.companions,
     companion_names: r.companion_names,
@@ -42,6 +48,7 @@ function createApp({ store = openDb(), adminToken = process.env.ADMIN_TOKEN, eve
     const names = Array.isArray(b.companion_names) ? b.companion_names.map((n) => clean(n)) : [];
     const data = {
       worker_name: clean(b.worker_name),
+      id_number: clean(b.id_number, 30).toUpperCase(),
       work_area: clean(b.work_area, 80),
       marital_status: clean(b.marital_status, 40),
       companion_names: names,
@@ -50,6 +57,10 @@ function createApp({ store = openDb(), adminToken = process.env.ADMIN_TOKEN, eve
 
     const errors = [];
     if (data.worker_name.length < 3) errors.push('El nombre del trabajador es obligatorio.');
+    const idDigits = data.id_number.replace(/[^0-9A-Z]/g, '');
+    if (!/^[0-9A-Z.\- ]+$/.test(data.id_number) || idDigits.length < 5 || idDigits.length > 20) {
+      errors.push('Escribe un número de cédula válido.');
+    }
     if (data.work_area.length < 2) errors.push('El área de trabajo es obligatoria.');
     if (!MARITAL_STATUSES.includes(data.marital_status)) errors.push('Selecciona un estado civil.');
     if (!Number.isInteger(companions) || companions < 0 || companions > MAX_COMPANIONS) {
@@ -110,7 +121,7 @@ function createApp({ store = openDb(), adminToken = process.env.ADMIN_TOKEN, eve
 
   app.get('/api/attendees.csv', requireAdmin, (_req, res) => {
     const cols = [
-      ['code', 'Código'], ['worker_name', 'Trabajador'], ['work_area', 'Área'], ['marital_status', 'Estado civil'],
+      ['code', 'Código'], ['worker_name', 'Trabajador'], ['id_number', 'Cédula'], ['work_area', 'Área'], ['marital_status', 'Estado civil'],
       ['companions', 'Acompañantes'], ['companion_names', 'Nombres de acompañantes'],
       ['created_at', 'Registrado (UTC)'], ['checked_in_at', 'Ingresó (UTC)'], ['checked_in_by', 'Validado por'],
     ];

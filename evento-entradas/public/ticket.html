@@ -39,7 +39,7 @@
     $('event').textContent = d.eventName;
     document.title = 'Tu entrada · ' + d.eventName;
     $('name').textContent = t.worker_name;
-    $('area').textContent = 'Área: ' + t.work_area;
+    $('area').textContent = `C.I. ${t.id_masked} · Área: ${t.work_area}`;
     if (t.companion_names.length) {
       for (const g of t.companion_names) $('guests').append(Object.assign(document.createElement('li'), { textContent: g }));
       $('guests-wrap').classList.remove('hidden');

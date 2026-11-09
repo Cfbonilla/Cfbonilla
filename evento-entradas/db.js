@@ -15,15 +15,15 @@ function randomCode() {
   return `EVT-${raw.slice(0, 5)}-${raw.slice(5)}`;
 }
 
-// Clave para detectar registros duplicados del mismo trabajador:
-// ignora mayúsculas, tildes y espacios extra ("José  Pérez" == "jose perez").
-function nameKey(name) {
-  return name.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+// Clave para detectar cédulas duplicadas: ignora puntos, guiones, espacios y mayúsculas
+// ("1.234.567-8" == "12345678").
+function idKey(idNumber) {
+  return String(idNumber).replace(/[^0-9a-z]/gi, '').toUpperCase();
 }
 
 function rowToRecord(row) {
   if (!row) return null;
-  const { name_key, companion_names, ...rest } = row;
+  const { id_key, companion_names, ...rest } = row;
   return { ...rest, companion_names: JSON.parse(companion_names || '[]') };
 }
 
@@ -32,11 +32,12 @@ function openDb(file = process.env.DB_FILE || path.join(__dirname, 'data', 'even
   const db = new DatabaseSync(file);
   db.exec(`
     PRAGMA journal_mode = WAL;
-    CREATE TABLE IF NOT EXISTS registrations (
+    CREATE TABLE IF NOT EXISTS workers (
       id               INTEGER PRIMARY KEY AUTOINCREMENT,
       code             TEXT NOT NULL UNIQUE,
       worker_name      TEXT NOT NULL,
-      name_key         TEXT NOT NULL UNIQUE,
+      id_number        TEXT NOT NULL,
+      id_key           TEXT NOT NULL UNIQUE,
       work_area        TEXT NOT NULL,
       marital_status   TEXT NOT NULL,
       companions       INTEGER NOT NULL DEFAULT 0,
@@ -48,13 +49,13 @@ function openDb(file = process.env.DB_FILE || path.join(__dirname, 'data', 'even
   `);
 
   const insertStmt = db.prepare(`
-    INSERT INTO registrations (code, worker_name, name_key, work_area, marital_status, companions, companion_names)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO workers (code, worker_name, id_number, id_key, work_area, marital_status, companions, companion_names)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `);
-  const byCode = db.prepare('SELECT * FROM registrations WHERE code = ?');
+  const byCode = db.prepare('SELECT * FROM workers WHERE code = ?');
   // Check-in atómico: solo actualiza si todavía no se ha usado, evitando dobles ingresos simultáneos.
   const checkInStmt = db.prepare(`
-    UPDATE registrations SET checked_in_at = datetime('now'), checked_in_by = ?
+    UPDATE workers SET checked_in_at = datetime('now'), checked_in_by = ?
     WHERE code = ? AND checked_in_at IS NULL
   `);
 
@@ -66,14 +67,14 @@ function openDb(file = process.env.DB_FILE || path.join(__dirname, 'data', 'even
       for (let attempt = 0; attempt < 5; attempt++) {
         const code = randomCode();
         try {
-          insertStmt.run(code, r.worker_name, nameKey(r.worker_name), r.work_area, r.marital_status,
+          insertStmt.run(code, r.worker_name, r.id_number, idKey(r.id_number), r.work_area, r.marital_status,
             r.companion_names.length, JSON.stringify(r.companion_names));
           return rowToRecord(byCode.get(code));
         } catch (err) {
           const msg = String(err.message);
-          if (msg.includes('registrations.code')) continue;
-          if (msg.includes('registrations.name_key')) {
-            throw Object.assign(new Error('Este trabajador ya está registrado. Si perdiste tu código, contacta a los organizadores.'), { status: 409 });
+          if (msg.includes('workers.code')) continue;
+          if (msg.includes('workers.id_key')) {
+            throw Object.assign(new Error('Esta cédula ya está registrada. Si perdiste tu código, contacta a los organizadores.'), { status: 409 });
           }
           throw err;
         }
@@ -94,7 +95,7 @@ function openDb(file = process.env.DB_FILE || path.join(__dirname, 'data', 'even
     },
 
     list() {
-      return db.prepare('SELECT * FROM registrations ORDER BY created_at DESC, id DESC').all().map(rowToRecord);
+      return db.prepare('SELECT * FROM workers ORDER BY created_at DESC, id DESC').all().map(rowToRecord);
     },
 
     stats() {
@@ -102,10 +103,10 @@ function openDb(file = process.env.DB_FILE || path.join(__dirname, 'data', 'even
         SELECT COUNT(*) AS registered,
                COALESCE(SUM(checked_in_at IS NOT NULL), 0) AS checked_in,
                COALESCE(SUM(1 + companions), 0) AS total_people
-        FROM registrations
+        FROM workers
       `).get();
     },
   };
 }
 
-module.exports = { openDb, randomCode, nameKey, ALPHABET };
+module.exports = { openDb, randomCode, idKey, ALPHABET };

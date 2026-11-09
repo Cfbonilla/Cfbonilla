@@ -18,6 +18,7 @@ async function setup() {
 
 const worker = {
   worker_name: 'José Pérez',
+  id_number: '1.234.567-8',
   work_area: 'Producción',
   marital_status: 'Casado/a',
   companions: 2,
@@ -37,9 +38,18 @@ test('registro -> código único -> QR -> validación', async (t) => {
   const qr = await req(`/api/tickets/${ticket.code}/qr.png`);
   assert.equal(qr.headers.get('content-type'), 'image/png');
 
-  // El mismo trabajador escrito distinto (tildes, mayúsculas, espacios) no se puede registrar dos veces.
-  const dup = await req('/api/register', { body: { ...worker, worker_name: '  jose   PEREZ ', companions: 0, companion_names: [] } });
+  // La cédula no se muestra completa en la entrada pública.
+  assert.equal(ticket.id_masked, '••••5678');
+
+  // La misma cédula escrita distinto (puntos, guiones, espacios) no se puede registrar dos veces.
+  const dup = await req('/api/register', { body: { ...worker, worker_name: 'Otra Persona', id_number: '12345678', companions: 0, companion_names: [] } });
   assert.equal(dup.status, 409);
+  assert.match((await dup.json()).error, /cédula ya está registrada/);
+
+  // Dos trabajadores con el mismo nombre pero distinta cédula sí pueden registrarse.
+  const namesake = await req('/api/register', { body: { ...worker, id_number: '87654321', companions: 0, companion_names: [] } });
+  assert.equal(namesake.status, 201);
+  const namesakeCode = (await namesake.json()).ticket.code;
 
   // Validación requiere token
   assert.equal((await req('/api/checkin', { body: { code: ticket.code } })).status, 401);
@@ -59,10 +69,12 @@ test('registro -> código único -> QR -> validación', async (t) => {
   assert.equal(fake.status, 404);
 
   const list = await (await req('/api/attendees', { admin: 'secreto' })).json();
-  assert.deepEqual(list.stats, { registered: 1, checked_in: 1, total_people: 3 });
+  assert.deepEqual(list.stats, { registered: 2, checked_in: 1, total_people: 4 });
+  assert.ok(list.attendees.some((a) => a.code === namesakeCode && a.id_number === '87654321'));
 
   const csv = await (await req('/api/attendees.csv', { admin: 'secreto' })).text();
   assert.match(csv, /"María López; Lucía Pérez"/);
+  assert.match(csv, /"1\.234\.567-8"/);
 });
 
 test('validación de datos', async (t) => {
@@ -71,6 +83,9 @@ test('validación de datos', async (t) => {
   const bad = async (body) => assert.equal((await req('/api/register', { body })).status, 400);
   await bad({ ...worker, worker_name: 'X' });
   await bad({ ...worker, work_area: '' });
+  await bad({ ...worker, id_number: '' });
+  await bad({ ...worker, id_number: '12' });
+  await bad({ ...worker, id_number: '<script>' });
   await bad({ ...worker, marital_status: 'Otro' });
   await bad({ ...worker, companions: 2, companion_names: ['Solo uno'] });   // faltan nombres
   await bad({ ...worker, companions: 1, companion_names: ['  '] });         // nombre vacío
@@ -81,7 +96,7 @@ test('los códigos generados no se repiten', () => {
   const store = openDb(':memory:');
   const codes = new Set();
   for (let i = 0; i < 2000; i++) {
-    codes.add(store.register({ ...worker, worker_name: `Trabajador ${i}`, companion_names: [] }).code);
+    codes.add(store.register({ ...worker, worker_name: `Trabajador ${i}`, id_number: String(100000 + i), companion_names: [] }).code);
   }
   assert.equal(codes.size, 2000);
 });

@@ -6,9 +6,11 @@
 
 <img src="assets/divider.svg" width="100%" alt="" />
 
-<img src="assets/player.svg" width="100%" alt="Jugador: Cfbonilla · Clase: dev full stack · Estado: en línea" />
+<img src="assets/player.svg" width="100%" alt="Jugador: Cfbonilla · Clase: ingeniero en diseño industrial · Subclase: dev full stack · Estado: en línea" />
 
-<img src="assets/inventory.svg" width="100%" alt="Inventario: Node.js, Express, SQLite, HTML5, CSS3, JavaScript vanilla" />
+<img src="assets/inventory-design.svg" width="100%" alt="Taller de diseño: SolidWorks, Rhinoceros, Fusion 360, AutoCAD, Inventor, Alias, Blender, KeyShot, Photoshop, Illustrator, InDesign, Grasshopper" />
+
+<img src="assets/inventory-code.svg" width="100%" alt="Código: Node.js, Express, SQLite, HTML5, CSS3, JavaScript" />
 
 <a href="evento-entradas">
   <img src="assets/quests.svg" width="100%" alt="Misiones — evento-entradas: sistema de entradas para eventos con código único y QR (Node.js, Express, SQLite). Clic para entrar." />

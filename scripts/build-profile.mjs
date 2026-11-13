@@ -13,16 +13,32 @@ const W = 840;
 // ───────────────────────── Contenido editable ─────────────────────────
 const PROFILE = {
   name: 'CFBONILLA',
-  playerClass: 'DEV FULL STACK',
+  playerClass: 'ING. DISEÑO INDUSTRIAL',
+  subClass: 'DEV FULL STACK',
   status: 'EN LINEA',
   dialog: ['HOLA, VIAJERO. BIENVENIDO A MI PERFIL.', 'EXPLORA MIS MISIONES Y PULSA START.'],
-  inventory: [
-    ['NODE', 'NODE.JS'],
-    ['EXP', 'EXPRESS'],
-    ['SQL', 'SQLITE'],
-    ['HTML', 'HTML5'],
-    ['CSS', 'CSS3'],
-    ['JS', 'VANILLA'],
+  // [abreviatura del ícono, nombre, color]
+  design: [
+    ['SW', 'SOLIDWORKS', '#ff4d5a'],
+    ['RH', 'RHINOCEROS', '#eef6fa'],
+    ['F360', 'FUSION 360', '#ff9a3d'],
+    ['ACAD', 'AUTOCAD', '#ff4d5a'],
+    ['INV', 'INVENTOR', '#f2d98a'],
+    ['AL', 'ALIAS', '#a3adc2'],
+    ['BL', 'BLENDER', '#ff9a3d'],
+    ['KS', 'KEYSHOT', '#00e5ff'],
+    ['PS', 'PHOTOSHOP', '#4b9dff'],
+    ['AI', 'ILLUSTRATOR', '#ffb13d'],
+    ['ID', 'INDESIGN', '#ff5c8a'],
+    ['GH', 'GRASSHOPPER', '#7ddc6e'],
+  ],
+  code: [
+    ['NODE', 'NODE.JS', '#7ddc6e'],
+    ['EXP', 'EXPRESS', '#eef6fa'],
+    ['SQL', 'SQLITE', '#00e5ff'],
+    ['HTML', 'HTML5', '#ff9a3d'],
+    ['CSS', 'CSS3', '#4b9dff'],
+    ['JS', 'JAVASCRIPT', '#f2d98a'],
   ],
   quest: {
     title: 'EVENTO-ENTRADAS',
@@ -64,6 +80,7 @@ const FONT = {
   '!': F('00100 00100 00100 00100 00100 00000 00100'), '?': F('01110 10001 00001 00010 00100 00000 00100'),
   '/': F('00001 00001 00010 00100 01000 10000 10000'), '>': F('01000 00100 00010 00001 00010 00100 01000'),
   '+': F('00000 00100 00100 11111 00100 00100 00000'), '_': F('00000 00000 00000 00000 00000 00000 11111'),
+  'Ñ': F('01110 00000 10001 11001 10101 10011 10001'),
   '%': F('11001 11010 00010 00100 01000 01011 10011'),
   '^': F('00000 01010 11111 11111 01110 00100 00000'), // corazón
   '@': F('00100 00100 11111 01110 01110 01010 10001'), // estrella
@@ -370,25 +387,25 @@ function dialog() {
 
 // ───────────────────────── Ficha del jugador ─────────────────────────
 function player() {
-  const H = 254;
-  let b = panel(14, 236, 'JUGADOR');
+  const H = 266;
+  let b = panel(14, 248, 'JUGADOR');
   // avatar
-  b += `<path d="${notched(32, 48, 152, 172, 4)}" fill="#1b2030"/>`;
-  b += `<path fill-rule="evenodd" d="${notched(32, 48, 152, 172, 4)}${notched(36, 52, 144, 164, 4)}" fill="${C.dim}"/>`;
-  b += stars(rng(3), 14, 150, 60).replace(/x="(\d+)"/g, (m, x) => `x="${44 + (x % 124)}"`);
-  b += `<ellipse cx="108" cy="212" rx="44" ry="4" fill="${C.cyan}" opacity=".3" filter="url(#glow)"/>`;
-  b += `<g class="bob">${sprite(CAT_IDLE, CAT_PAL, 54, 62, 5)}</g>`;
+  b += `<path d="${notched(32, 54, 152, 172, 4)}" fill="#1b2030"/>`;
+  b += `<path fill-rule="evenodd" d="${notched(32, 54, 152, 172, 4)}${notched(36, 58, 144, 164, 4)}" fill="${C.dim}"/>`;
+  b += stars(rng(3), 14, 156, 66).replace(/x="(\d+)"/g, (m, x) => `x="${44 + (x % 124)}"`);
+  b += `<ellipse cx="108" cy="218" rx="44" ry="4" fill="${C.cyan}" opacity=".3" filter="url(#glow)"/>`;
+  b += `<g class="bob">${sprite(CAT_IDLE, CAT_PAL, 54, 68, 5)}</g>`;
   // datos
   const lx = 216, vx = 380;
-  [['JUGADOR', PROFILE.name, C.cyan], ['CLASE', PROFILE.playerClass, C.ice], ['ESTADO', PROFILE.status, C.ice]].forEach(([k, v, col], i) => {
-    const y = 50 + i * 32;
+  [['JUGADOR', PROFILE.name, C.cyan], ['CLASE', PROFILE.playerClass, C.gold], ['SUBCLASE', PROFILE.subClass, C.ice], ['ESTADO', PROFILE.status, C.ice]].forEach(([k, v, col], i) => {
+    const y = 48 + i * 30;
     b += text(k, lx, y, 3, C.dim) + text(v, vx, y, 3, col);
   });
-  b += rect(vx + tw(PROFILE.status, 3) + 14, 50 + 64 + 4, 12, 12, C.cyan, 'class="blink" filter="url(#soft)"');
+  b += rect(vx + tw(PROFILE.status, 3) + 14, 48 + 90 + 4, 12, 12, C.cyan, 'class="blink" filter="url(#soft)"');
   // barras
   const bars = [['HP', 30, C.red, '100/100'], ['CAFE', 24, C.gold, '80%'], ['XP', 30, C.cyan, null]];
   bars.forEach(([k, n, col, val], i) => {
-    const y = 156 + i * 26, bx = 292, bw = 362;
+    const y = 174 + i * 26, bx = 292, bw = 362;
     b += text(k, lx, y, 2, C.mute);
     b += rect(bx - 4, y - 4, bw + 6, 22, C.line) + rect(bx - 2, y - 2, bw + 2, 18, C.bg0);
     let segs = '';
@@ -409,37 +426,33 @@ function player() {
 @keyframes xp{0%{transform:translateX(0)}80%,100%{transform:translateX(360px)}}
 .lvl{animation:lvl 9s steps(1) infinite}
 @keyframes lvl{0%,79%{opacity:0}80%,86%,92%{opacity:1}83%,89%,97%{opacity:0}}`;
-  return svg(H, b, { css, label: `Jugador: ${PROFILE.name}. Clase: ${PROFILE.playerClass}. Estado: ${PROFILE.status}.`, notch: 0 });
+  return svg(H, b, { css, label: `Jugador: ${PROFILE.name}. Clase: ${PROFILE.playerClass}, ${PROFILE.subClass}. Estado: ${PROFILE.status}.`, notch: 0 });
 }
 
 // ───────────────────────── Inventario ─────────────────────────
-function inventory() {
-  const H = 204, S = 88, GAP = 10, N = 8;
-  const x0 = Math.round((W - (N * S + (N - 1) * GAP)) / 4) * 2;
-  const cols = [C.cyan, C.ice, C.gold, C.cyan, C.ice, C.gold];
-  let b = panel(14, 186, 'INVENTARIO');
-  for (let i = 0; i < N; i++) {
-    const x = x0 + i * (S + GAP), y = 50, item = PROFILE.inventory[i];
-    b += `<path d="${notched(x, y, S, S, 4)}" fill="${item ? C.bg2 : C.bg0}"/>`;
-    b += `<path fill-rule="evenodd" d="${notched(x, y, S, S, 4)}${notched(x + 4, y + 4, S - 8, S - 8, 2)}" fill="${item ? C.dim : C.line}"/>`;
-    if (item) {
-      const s = item[0].length <= 2 ? 5 : item[0].length === 3 ? 4 : 3;
-      b += textC(item[0], x + S / 2 + 2, y + S / 2 - (7 * s) / 2 + 3, s, '#000');
-      b += textC(item[0], x + S / 2, y + S / 2 - (7 * s) / 2 + 1, s, cols[i % cols.length]);
-      b += textC(item[1], x + S / 2, y + S + 12, 2, C.mute);
-    } else {
-      b += textC('?', x + S / 2, y + S / 2 - 10, 3, C.line);
-      b += textC('- - -', x + S / 2, y + S + 12, 2, C.line);
-    }
-  }
+function inventory(title, items, perRow = 6) {
+  const S = 88, PX = 132, PY = 130, rows = Math.ceil(items.length / perRow);
+  const H = 76 + rows * PY, x0 = (W - ((perRow - 1) * PX + S)) / 2, y0 = 52;
+  const pos = (i) => [x0 + (i % perRow) * PX, y0 + Math.floor(i / perRow) * PY];
+  let b = panel(14, H - 18, title);
+  items.forEach(([abbr, name, col], i) => {
+    const [x, y] = pos(i);
+    b += `<path d="${notched(x, y, S, S, 4)}" fill="${C.bg2}"/>`;
+    b += `<path fill-rule="evenodd" d="${notched(x, y, S, S, 4)}${notched(x + 4, y + 4, S - 8, S - 8, 2)}" fill="${col}"/>`;
+    b += rect(x + 8, y + 8, 8, 4, col, 'opacity=".5"') + rect(x + 8, y + 12, 4, 4, col, 'opacity=".5"');
+    const s = abbr.length <= 2 ? 5 : abbr.length === 3 ? 4 : 3;
+    b += textC(abbr, x + S / 2 + 2, y + S / 2 - (7 * s) / 2 + 3, s, '#000');
+    b += textC(abbr, x + S / 2, y + S / 2 - (7 * s) / 2 + 1, s, col);
+    b += textC(name, x + S / 2, y + S + 12, 2, C.mute);
+  });
   // cursor de selección que salta entre objetos
-  const n = PROFILE.inventory.length, c = 14, t = 4, x = x0 - 6, y = 44, q = S + 12;
+  const n = items.length, c = 14, t = 4, x = x0 - 6, y = y0 - 6, q = S + 12;
   const corner = (cx, cy, dx, dy) => `M${cx} ${cy}h${dx * c}v${dy * t}h${-dx * (c - t)}v${dy * (c - t)}h${-dx * t}z`;
   b += `<g class="sel"><path class="blink" fill="${C.ice}" filter="url(#soft)" d="${corner(x, y, 1, 1)}${corner(x + q, y, -1, 1)}${corner(x, y + q, 1, -1)}${corner(x + q, y + q, -1, -1)}"/></g>`;
   let kf = '';
-  for (let i = 0; i < n; i++) kf += `${((i * 100) / n).toFixed(2)}%{transform:translateX(${i * (S + GAP)}px)}`;
+  for (let i = 0; i < n; i++) kf += `${((i * 100) / n).toFixed(2)}%{transform:translate(${pos(i)[0] - x0}px,${pos(i)[1] - y0}px)}`;
   const css = `.sel{animation:sel ${n * 1.5}s steps(1) infinite}@keyframes sel{${kf}}`;
-  return svg(H, b, { css, label: `Inventario: ${PROFILE.inventory.map((i) => i[1]).join(', ')}`, notch: 0 });
+  return svg(H, b, { css, label: `${title}: ${items.map((i) => i[1]).join(', ')}`, notch: 0 });
 }
 
 // ───────────────────────── Misiones ─────────────────────────
@@ -499,7 +512,11 @@ function footer() {
 
 // ───────────────────────── Salida ─────────────────────────
 fs.mkdirSync(OUT, { recursive: true });
-const files = { banner, dialog, player, inventory, quests, divider, footer };
+const files = {
+  banner, dialog, player, quests, divider, footer,
+  'inventory-design': () => inventory('TALLER DE DISEÑO', PROFILE.design),
+  'inventory-code': () => inventory('CODIGO', PROFILE.code),
+};
 for (const [name, fn] of Object.entries(files)) {
   const out = fn();
   fs.writeFileSync(path.join(OUT, `${name}.svg`), out);

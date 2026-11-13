@@ -13,7 +13,22 @@
     btn.setAttribute('aria-pressed', String(dark));
   }
 
+  // Nieve pixelada cayendo en el encabezado.
+  function snow() {
+    for (const box of document.querySelectorAll('.snow')) {
+      for (let i = 0; i < 28; i++) {
+        const f = document.createElement('i');
+        const size = [4, 6, 8][i % 3];
+        const dur = 5 + Math.random() * 6;
+        f.style.cssText = `left:${Math.random() * 100}%;width:${size}px;height:${size}px;` +
+          `animation-duration:${dur}s;animation-delay:${-Math.random() * dur}s`;
+        box.appendChild(f);
+      }
+    }
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
+    snow();
     const btn = document.getElementById('theme-toggle');
     if (!btn) return;
     paint(btn);

@@ -1,6 +1,6 @@
 # 🎟️ Registro de entrada a eventos
 
-Sistema web para registrar a los asistentes de un evento (por defecto, los trabajadores de **Navidad Paraíso 2026**), entregarles una **entrada con código QR único** y que los organizadores la **validen en la puerta**. Tiene estilo *pixel art* de 8 bits y modo claro/oscuro.
+Sistema web para registrar a los asistentes de un evento (por defecto, los trabajadores de **Navidad Paraíso 2026**), entregarles una **entrada con código QR único** y que los organizadores la **validen en la puerta**. Tiene estilo *pixel art* de 8 bits navideño (nieve, luces, árboles, elefantes y personas con gorro navideño), los **colores de la empresa** y modo claro/oscuro.
 
 ```
  TRABAJADOR                                        ORGANIZADOR
@@ -40,9 +40,11 @@ evento-entradas/
 │   ├── index.html       ← formulario de registro (para trabajadores)
 │   ├── ticket.html      ← la entrada con el QR
 │   ├── admin.html       ← panel de organizadores
-│   ├── styles.css       ← colores y diseño pixel art
-│   ├── theme.js         ← botón de modo claro / oscuro
-│   └── sprite.svg       ← ícono pixel art
+│   ├── styles.css       ← colores de la empresa y diseño pixel art
+│   ├── theme.js         ← botón de modo claro / oscuro y nieve que cae
+│   └── sprites/         ← personajes pixel art (árbol, elefantes, personas, regalo, luces)
+├── tools/
+│   └── generar-sprites.js ← dibuja los personajes (para editarlos o crear nuevos)
 ├── test/                ← pruebas automáticas
 └── data/                ← se crea sola al encender: aquí está la base de datos
 ```
@@ -225,12 +227,22 @@ Luego comparte el enlace por WhatsApp/correo, o conviértelo en un QR para un af
 
 - **Nombre del evento:** `configuracion.txt` → `EVENT_NAME`.
 - **Título "Registro de entrada a eventos":** está en `public/index.html`, `public/ticket.html` y `public/admin.html` (busca `<h1>`).
-- **Colores:** `public/styles.css`, al inicio. Hay dos bloques: **Tema claro** y **Tema oscuro**. Cambia los códigos de color, por ejemplo:
+- **Colores de la empresa:** al inicio de `public/styles.css`:
   ```css
-  --header: #ff004d;   /* color del encabezado */
-  --primary: #ffcd1f;  /* color de los botones */
-  --accent: #7b2ff7;   /* números y detalles */
+  --red: #af1831;     /* encabezado, botones, detalles */
+  --gray: #54565a;    /* textos secundarios; tarjetas en modo oscuro */
+  --white: #ffffff;   /* fondo en modo claro */
+  --black: #000000;   /* bordes, textos; fondo en modo oscuro */
   ```
+  Debajo hay dos bloques, **Tema claro** y **Tema oscuro**, que deciden dónde se usa cada color.
+  Los únicos colores fuera de la paleta son el verde y el amarillo de los mensajes de validación (acceso permitido / entrada ya usada), para que en la puerta se distingan de un vistazo.
+- **Personajes navideños:** son dibujos de texto en `tools/generar-sprites.js` (cada letra es un color, `.` es transparente). Puedes cambiar los colores de la ropa, añadir personas o elefantes, y después ejecutar:
+  ```bash
+  node tools/generar-sprites.js
+  ```
+  Para cambiar qué personajes aparecen en cada página, edita el bloque `<div class="scene">` de `index.html`, `ticket.html` o `admin.html`.
+- **Nieve:** si prefieres que no caiga nieve, borra `<div class="snow" …></div>` del encabezado de cada página. (Se desactiva sola si el dispositivo tiene activado "reducir movimiento").
+- **Después de Navidad:** quita la escena (`lights`, `scene`, `ground`) y la nieve para un look neutro.
 - **Estados civiles:** `server.js` → `MARITAL_STATUSES`.
 - **Fuentes pixel:** "Press Start 2P" y "VT323" de Google Fonts (necesitan internet; sin internet se usa una fuente monoespaciada).
 

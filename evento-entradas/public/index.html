@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Registro de entrada a eventos</title>
-  <link rel="icon" href="sprite.svg" type="image/svg+xml">
+  <link rel="icon" href="sprites/arbol.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap">
@@ -13,15 +13,32 @@
 </head>
 <body>
 <header class="brand">
+  <div class="snow" aria-hidden="true"></div>
   <div class="topbar"><button id="theme-toggle" type="button" class="secondary">☾ OSCURO</button></div>
-  <img class="sprite" src="sprite.svg" alt="">
   <h1>Registro de entrada a eventos</h1>
   <p class="eyebrow">★ <span id="event-name">Navidad Paraíso 2026</span> ★</p>
 </header>
+<div class="lights" aria-hidden="true"></div>
+<div class="scene" aria-hidden="true">
+    <img src="sprites/arbol.svg" alt="" class="tree">
+    <img src="sprites/persona-1.svg" alt="">
+    <img src="sprites/elefante-1.svg" alt="" class="ele">
+    <img src="sprites/regalo.svg" alt="" class="gift">
+    <img src="sprites/persona-2.svg" alt="">
+    <img src="sprites/arbol.svg" alt="" class="tree wide-only">
+    <img src="sprites/persona-3.svg" alt="" class="wide-only">
+    <img src="sprites/elefante-2.svg" alt="" class="ele wide-only">
+    <img src="sprites/regalo.svg" alt="" class="gift wide-only">
+    <img src="sprites/persona-4.svg" alt="">
+    <img src="sprites/arbol.svg" alt="" class="tree">
+</div>
+<div class="ground" aria-hidden="true"></div>
 <main>
   <p class="intro">Completa los 2 niveles y obtendrás tu <strong>entrada con código QR</strong>. Preséntala en la puerta el día del evento. <span class="blink">▮</span></p>
 
-  <form id="form" class="card" novalidate>
+  <form id="form" class="card has-peek" novalidate>
+    <img class="peek bounce" src="sprites/elefante-2.svg" alt="" aria-hidden="true">
+    <img class="peek left" src="sprites/arbol.svg" alt="" aria-hidden="true">
     <div class="steps"><span id="s1" class="active">Nivel 1<br>Tus datos</span><span id="s2">Nivel 2<br>Acompañantes</span></div>
 
     <section id="step1">

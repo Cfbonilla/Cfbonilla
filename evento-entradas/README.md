@@ -64,13 +64,13 @@ Solo necesitas hacerlo una vez por computadora.
 
 ### Paso 2 · Descargar el sistema
 **Opción A · Sin saber Git (recomendada):**
-1. Descarga el ZIP: https://github.com/Cfbonilla/Cfbonilla/archive/refs/heads/claude/event-entry-system-h44tez.zip
+1. Descarga el ZIP: https://github.com/Cfbonilla/Cfbonilla/archive/refs/heads/Christmas-Entry-System.zip
 2. Clic derecho sobre el ZIP → **Extraer todo**.
 3. Dentro encontrarás la carpeta **`evento-entradas`**. Muévela donde quieras (por ejemplo, al Escritorio).
 
 **Opción B · Con Git:**
 ```bash
-git clone -b claude/event-entry-system-h44tez https://github.com/Cfbonilla/Cfbonilla.git
+git clone -b Christmas-Entry-System https://github.com/Cfbonilla/Cfbonilla.git
 cd Cfbonilla/evento-entradas
 ```
 
@@ -207,7 +207,7 @@ En tu computadora solo funciona para ti. Para que los trabajadores se registren 
 1. Entra en **https://railway.com** e inicia sesión con tu cuenta de **GitHub**.
 2. **New Project → Deploy from GitHub repo →** elige **`Cfbonilla/Cfbonilla`**.
 3. Abre el servicio creado → pestaña **Settings**:
-   - **Source → Branch:** `claude/event-entry-system-h44tez` (o `main` si ya unificaste la rama).
+   - **Source → Branch:** `Christmas-Entry-System` (o `main` si ya unificaste la rama).
    - **Root Directory:** `evento-entradas`
 4. Pestaña **Variables** → agrega:
    | Variable | Valor |

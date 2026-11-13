@@ -13,10 +13,10 @@ const W = 840;
 // ───────────────────────── Contenido editable ─────────────────────────
 const PROFILE = {
   name: 'CFBONILLA',
-  playerClass: 'ING. DISEÑO INDUSTRIAL',
-  subClass: 'DEV FULL STACK',
-  status: 'EN LINEA',
-  dialog: ['HOLA, VIAJERO. BIENVENIDO A MI PERFIL.', 'EXPLORA MIS MISIONES Y PULSA START.'],
+  playerClass: 'INDUSTRIAL DESIGN ENG.',
+  subClass: 'FULL STACK DEV',
+  status: 'ONLINE',
+  dialog: ['HELLO, TRAVELER. WELCOME TO MY PROFILE.', 'EXPLORE MY QUESTS AND PRESS START.'],
   // [abreviatura del ícono, nombre, color]
   design: [
     ['SW', 'SOLIDWORKS', '#ff4d5a'],
@@ -42,7 +42,7 @@ const PROFILE = {
   ],
   quest: {
     title: 'EVENTO-ENTRADAS',
-    desc: 'SISTEMA DE ENTRADAS PARA EVENTOS CON CODIGO UNICO Y QR',
+    desc: 'EVENT TICKETING SYSTEM WITH UNIQUE CODES AND QR',
     tags: 'NODE.JS + EXPRESS + SQLITE',
   },
 };
@@ -388,7 +388,7 @@ function dialog() {
 // ───────────────────────── Ficha del jugador ─────────────────────────
 function player() {
   const H = 266;
-  let b = panel(14, 248, 'JUGADOR');
+  let b = panel(14, 248, 'PLAYER');
   // avatar
   b += `<path d="${notched(32, 54, 152, 172, 4)}" fill="#1b2030"/>`;
   b += `<path fill-rule="evenodd" d="${notched(32, 54, 152, 172, 4)}${notched(36, 58, 144, 164, 4)}" fill="${C.dim}"/>`;
@@ -397,15 +397,15 @@ function player() {
   b += `<g class="bob">${sprite(CAT_IDLE, CAT_PAL, 54, 68, 5)}</g>`;
   // datos
   const lx = 216, vx = 380;
-  [['JUGADOR', PROFILE.name, C.cyan], ['CLASE', PROFILE.playerClass, C.gold], ['SUBCLASE', PROFILE.subClass, C.ice], ['ESTADO', PROFILE.status, C.ice]].forEach(([k, v, col], i) => {
+  [['PLAYER', PROFILE.name, C.cyan], ['CLASS', PROFILE.playerClass, C.gold], ['SUBCLASS', PROFILE.subClass, C.ice], ['STATUS', PROFILE.status, C.ice]].forEach(([k, v, col], i) => {
     const y = 48 + i * 30;
     b += text(k, lx, y, 3, C.dim) + text(v, vx, y, 3, col);
   });
   b += rect(vx + tw(PROFILE.status, 3) + 14, 48 + 90 + 4, 12, 12, C.cyan, 'class="blink" filter="url(#soft)"');
   // barras
-  const bars = [['HP', 30, C.red, '100/100'], ['CAFE', 24, C.gold, '80%'], ['XP', 30, C.cyan, null]];
+  const bars = [['HP', 30, C.red, '100/100'], ['COFFEE', 24, C.gold, '80%'], ['XP', 30, C.cyan, null]];
   bars.forEach(([k, n, col, val], i) => {
-    const y = 174 + i * 26, bx = 292, bw = 362;
+    const y = 174 + i * 26, bx = 300, bw = 362;
     b += text(k, lx, y, 2, C.mute);
     b += rect(bx - 4, y - 4, bw + 6, 22, C.line) + rect(bx - 2, y - 2, bw + 2, 18, C.bg0);
     let segs = '';
@@ -413,10 +413,10 @@ function player() {
     b += segs;
     if (k === 'XP') {
       b += clip(bx, y, 360, 14, rect(bx, y, 360, 14, C.bg0, 'class="xp" transform="translate(360 0)"'));
-      b += text('LEVEL UP!', 670, y, 2, C.ice, 'class="lvl" opacity="0" filter="url(#soft)"');
+      b += text('LEVEL UP!', 678, y, 2, C.ice, 'class="lvl" opacity="0" filter="url(#soft)"');
     } else {
       b += clip(bx, y, n * 12, 14, rect(bx, y, n * 12, 14, C.bg0, `class="fill" transform="translate(${n * 12} 0)"`));
-      b += text(val, 670, y, 2, C.mute);
+      b += text(val, 678, y, 2, C.mute);
     }
   });
   const css = `
@@ -426,7 +426,7 @@ function player() {
 @keyframes xp{0%{transform:translateX(0)}80%,100%{transform:translateX(360px)}}
 .lvl{animation:lvl 9s steps(1) infinite}
 @keyframes lvl{0%,79%{opacity:0}80%,86%,92%{opacity:1}83%,89%,97%{opacity:0}}`;
-  return svg(H, b, { css, label: `Jugador: ${PROFILE.name}. Clase: ${PROFILE.playerClass}, ${PROFILE.subClass}. Estado: ${PROFILE.status}.`, notch: 0 });
+  return svg(H, b, { css, label: `Player: ${PROFILE.name}. Class: ${PROFILE.playerClass}, ${PROFILE.subClass}. Status: ${PROFILE.status}.`, notch: 0 });
 }
 
 // ───────────────────────── Inventario ─────────────────────────
@@ -458,7 +458,7 @@ function inventory(title, items, perRow = 6) {
 // ───────────────────────── Misiones ─────────────────────────
 function quests() {
   const H = 246, q = PROFILE.quest;
-  let b = panel(14, 228, 'MISIONES');
+  let b = panel(14, 228, 'QUESTS');
   const row = (y, h, active) => {
     let o = `<path d="${notched(24, y, 792, h, 4)}" fill="${active ? C.bg2 : C.bg0}"/>`;
     o += `<path fill-rule="evenodd" d="${notched(24, y, 792, h, 4)}${notched(26, y + 2, 788, h - 4, 2)}" fill="${active ? C.cyan : C.line}"/>`;
@@ -470,14 +470,14 @@ function quests() {
   b += text(q.title, 88, 58, 3, C.cyan);
   b += text(q.desc, 88, 90, 2, C.ice);
   b += text(q.tags, 88, 112, 2, C.gold);
-  b += textR('@ COMPLETADA', 800, 60, 2, C.gold, 'filter="url(#soft)"');
-  b += textR('| CLIC PARA ENTRAR', 800, 112, 2, C.cyan, 'class="blink"');
-  [[142, '??? - MISION BLOQUEADA'], [190, '??? - PROXIMAMENTE']].forEach(([y, label]) => {
+  b += textR('@ COMPLETED', 800, 60, 2, C.gold, 'filter="url(#soft)"');
+  b += textR('| CLICK TO ENTER', 800, 112, 2, C.cyan, 'class="blink"');
+  [[142, '??? - LOCKED QUEST'], [190, '??? - COMING SOON']].forEach(([y, label]) => {
     b += row(y, 40, false);
     b += text('?', 48, y + 10, 3, C.dim) + text(label, 88, y + 13, 2, C.dim);
     b += textR('LV ??', 800, y + 13, 2, C.line);
   });
-  return svg(H, b, { label: `Misiones. ${q.title}: ${q.desc} (${q.tags}). Completada.`, notch: 0 });
+  return svg(H, b, { label: `Quests. ${q.title}: ${q.desc} (${q.tags}). Completed.`, notch: 0 });
 }
 
 // ───────────────────────── Divisor y pie ─────────────────────────
@@ -490,7 +490,7 @@ function divider() {
     b += rect(x, 8, 8, 4, i % 2 ? C.dim : C.cyan, `class="t${1 + (i % 4)}"`);
   }
   b += `<g class="pulse">${rect(W / 2 - 2, 2, 4, 4, C.cyan)}${rect(W / 2 - 6, 6, 12, 4, C.cyan)}${rect(W / 2 - 10, 10, 20, 0, C.cyan)}${rect(W / 2 - 6, 10, 12, 4, C.gold)}${rect(W / 2 - 2, 14, 4, 4, C.cyan)}</g>`;
-  return svg(H, b, { label: 'divisor', notch: 0 });
+  return svg(H, b, { label: 'divider', notch: 0 });
 }
 
 function footer() {
@@ -514,8 +514,8 @@ function footer() {
 fs.mkdirSync(OUT, { recursive: true });
 const files = {
   banner, dialog, player, quests, divider, footer,
-  'inventory-design': () => inventory('TALLER DE DISEÑO', PROFILE.design),
-  'inventory-code': () => inventory('CODIGO', PROFILE.code),
+  'inventory-design': () => inventory('DESIGN WORKSHOP', PROFILE.design),
+  'inventory-code': () => inventory('CODE', PROFILE.code),
 };
 for (const [name, fn] of Object.entries(files)) {
   const out = fn();

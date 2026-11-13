@@ -33,9 +33,9 @@ const PROFILE = {
 
 // ───────────────────────── Paleta ─────────────────────────
 const C = {
-  bg0: '#04050d', bg1: '#080c1f', bg2: '#0d1533', line: '#16224f',
-  deep: '#1b3bff', blue: '#2d7dff', cyan: '#00e5ff', ice: '#d6f7ff',
-  violet: '#7b5cff', dim: '#4a63a8', mute: '#8fa8e0',
+  bg0: '#06070b', bg1: '#0b0d14', bg2: '#131620', line: '#252b3b',
+  deep: '#16233f', blue: '#4b86e8', cyan: '#00e5ff', ice: '#eef6fa',
+  gold: '#f2d98a', red: '#ff4d5a', dim: '#5d667f', mute: '#a3adc2',
 };
 
 // ───────────────────────── Fuente bitmap 5x7 ─────────────────────────
@@ -96,23 +96,67 @@ const textC = (str, cx, y, s, fill, extra) => text(str, Math.round((cx - tw(str,
 const textR = (str, rx, y, s, fill, extra) => text(str, rx - tw(str, s), y, s, fill, extra);
 
 // ───────────────────────── Sprites ─────────────────────────
-const HERO_PAL = { k: '#02030a', w: C.ice, c: C.cyan, b: C.blue, d: '#1a3fb0', v: C.violet };
-const HERO_TOP = [
-  '....kkkkk...',
-  '...kwwwwwk..',
-  '..kwwwwwwwk.',
-  '..kwkkkkkwk.',
-  '..kwkccckwk.',
-  '..kwkcwckwk.',
-  '..kwkkkkkwk.',
-  '...kwwwwwk..',
-  '..kkbbbbbkk.',
-  '.kbkbbcbbkbk',
-  '.kbkbbbbbkbk',
-  '..kkbbbbbkk.',
+// Gato de terno y corbata roja con sombrero de paja toquilla
+const CAT_PAL = {
+  k: '#0a0b12', h: '#f4e7b8', H: '#d9c283', n: '#1b1b24', f: '#9a6844', F: '#6e452b',
+  g: '#c9eef7', p: '#ff7fae', s: '#4d546c', S: '#353b50', w: '#ffffff', r: '#e8262a',
+};
+const CAT_HAT = [
+  '.......kkkkkkkk.......',
+  '......khhhhhhhhk......',
+  '......khhhHHhhhk......',
+  '...k..khhhhhhhhk..k...',
+  '..kfk.knnnnnnnnk.kfk..',
+  '..kfFkknnnnnnnnkkFfk..',
+  '.kkkkkhhhhhhhhhhkkkkk.',
+  'khhhhhhhhhhhhhhhhhhhHk',
+  '.kHHHHHHHHHHHHHHHHHHk.',
+  '..kkkkkkkkkkkkkkkkkk..',
+  '....kffffffffffffk....',
+  '....kfnnnnnnnnnnfk....',
+  '....kfngwgnngwgnfk....',
+  '....kfngggnngggnfk....',
 ];
-const HERO_A = [...HERO_TOP, '...kdk.kdk..', '...kkk.kkk..'];
-const HERO_B = [...HERO_TOP, '..kdk...kdk.', '..kkk...kkk.'];
+const CAT_FACE = [
+  '....kfnnnnffnnnnfk....',
+  '..F.kfffffppfffffk.F..',
+  '....kffFffkkffFffk....',
+  '..F.kffffffffffffk.F..',
+  '.....kkffffffffkk.....',
+];
+const CAT_BODY = [
+  '.....kkswwrrwwskk.....',
+  '...kksssswrrwsssskk...',
+  '..kssssssSrrSssssssk..',
+  'f.ksskssSSrrSSsskssk..',
+  'f.kssksssSrrSssskssk..',
+  'ffksskssssrrsssskssk..',
+  '..kffksssssssssskffk..',
+  '..kkkkSSSSkkSSSSkkkk..',
+];
+// pose quieta: señala hacia arriba con el dedo, como en la referencia
+const CAT_FACE_IDLE = [
+  '....kfnnnnffnnnnfk.k..',
+  '..F.kfffffppfffffkkfk.',
+  '....kffFffkkffFffkkfk.',
+  '..F.kffffffffffffkfffk',
+  '.....kkffffffffkkkfffk',
+];
+const CAT_BODY_IDLE = [
+  '.....kkswwrrwwskkkwwwk',
+  '...kksssswrrwssssssssk',
+  '..kssssssSrrSsssssssk.',
+  'f.ksskssSSrrSSssk.....',
+  'f.kssksssSrrSsssk.....',
+  'ffksskssssrrssssk.....',
+  '..kffkssssssssssk.....',
+  '..kkkkSSSSkkSSSSk.....',
+];
+const CAT_LEGS_A = ['.....kSSSSkkSSSSk.....', '.....kSSSSkkSSSSk.....', '....kkkkkk..kkkkkk....'];
+const CAT_LEGS_B = ['....kSSSSk..kSSSSk....', '...kSSSSk....kSSSSk...', '..kkkkkk......kkkkkk..'];
+const CAT_RUN_A = [...CAT_HAT, ...CAT_FACE, ...CAT_BODY, ...CAT_LEGS_A];
+const CAT_RUN_B = [...CAT_HAT, ...CAT_FACE, ...CAT_BODY, ...CAT_LEGS_B];
+const CAT_IDLE = [...CAT_HAT, ...CAT_FACE_IDLE, ...CAT_BODY_IDLE, ...CAT_LEGS_A];
 
 function sprite(rows, pal, x, y, s) {
   const by = {};
@@ -166,7 +210,7 @@ const DEFS = `
 <filter id="glow" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="5"/></filter>
 <filter id="soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
 <pattern id="scan" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="4" height="1" fill="#000" opacity=".22"/></pattern>
-<linearGradient id="chrome" x1="0" y1="0" x2="0" y2="1"><stop offset=".43" stop-color="#f1fdff"/><stop offset=".43" stop-color="${C.cyan}"/><stop offset=".86" stop-color="${C.cyan}"/><stop offset=".86" stop-color="${C.blue}"/></linearGradient>`;
+<linearGradient id="chrome" x1="0" y1="0" x2="0" y2="1"><stop offset=".43" stop-color="#ffffff"/><stop offset=".43" stop-color="${C.cyan}"/></linearGradient>`;
 
 function svg(h, body, { css = '', label, notch = 8 } = {}) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${h}" width="${W}" height="${h}" shape-rendering="crispEdges" role="img" aria-label="${label}">
@@ -180,7 +224,7 @@ function svg(h, body, { css = '', label, notch = 8 } = {}) {
 
 function stars(rand, n, maxY, minY = 0) {
   let out = '';
-  const cols = [C.ice, C.ice, C.cyan, C.blue, C.mute];
+  const cols = [C.ice, C.ice, C.gold, C.cyan, C.mute, C.dim];
   for (let i = 0; i < n; i++) {
     const s = rand() < 0.2 ? 4 : 2;
     const x = Math.floor((rand() * (W - 8)) / 2) * 2;
@@ -243,7 +287,7 @@ function banner() {
   let b = '';
   // cielo en bandas
   b += rect(0, 0, W, H, C.bg0);
-  [[96, '#050818'], [150, '#070c22'], [196, '#0a1230'], [232, '#0e1a44'], [256, '#13245c']].forEach(([y, col]) => (b += rect(0, y, W, G - y, col)));
+  [[96, '#07080e'], [150, '#090b13'], [196, '#0c0f1a'], [232, '#101523'], [256, '#151c30']].forEach(([y, col]) => (b += rect(0, y, W, G - y, col)));
   b += stars(rand, 110, 210);
   // luna
   const moon = [];
@@ -256,24 +300,34 @@ function banner() {
     }
     moon.push(row);
   }
-  b += `<circle cx="718" cy="92" r="44" fill="${C.cyan}" opacity=".35" filter="url(#glow)" class="pulse"/>`;
-  b += sprite(moon, { m: '#cdf6ff', s: '#8fdcf5', c: '#6cc4e6' }, 680, 54, 4);
+  b += `<circle cx="718" cy="92" r="44" fill="${C.ice}" opacity=".22" filter="url(#glow)" class="pulse"/>`;
+  b += sprite(moon, { m: '#f3f6f8', s: '#c5ccd6', c: '#a9b2bf' }, 680, 54, 4);
+  // volcán nevado al fondo
+  let volc = '', snow = '';
+  for (let r = 0; r * 4 < G - 130; r++) {
+    const hw = 10 + r * 6, y = 130 + r * 4;
+    volc += rect(210 - hw, y, hw * 2, 4, '#1a1f2e') + rect(210, y, hw, 4, '#141824');
+    if (r < 4) snow += rect(210 - hw, y, hw * 2, 4, '#e4eaf1') + rect(210 + 2, y, hw - 2, 4, '#b8c2d1');
+    if (r === 4) snow += rect(210 - hw, y, 12, 4, '#e4eaf1') + rect(210 - 14, y, 12, 4, '#e4eaf1') + rect(210 + 8, y, 10, 4, '#b8c2d1') + rect(210 + 26, y, 8, 4, '#b8c2d1');
+    if (r === 5) snow += rect(210 - hw + 4, y, 4, 4, '#e4eaf1') + rect(210 - 10, y, 4, 4, '#e4eaf1') + rect(210 + 12, y, 4, 4, '#b8c2d1');
+  }
+  b += volc + snow;
   // estrella fugaz
   b += `<g class="shoot"><path d="M0 0h6v2h-6zM-10 4h10v2h-10zM-24 8h14v2h-14z" fill="${C.ice}" transform="scale(-1 1)"/></g>`;
   // ciudad
-  b += `<g class="far">${skyline(11, { minH: 48, maxH: 132, minW: 32, maxW: 72, body: '#0b1638', win: ['#1d3a8a', '#24479f'], winLit: 0.3, blinkCol: C.blue, ground: G })}</g>`;
-  b += `<g class="near">${skyline(42, { minH: 24, maxH: 92, minW: 40, maxW: 96, body: '#060a1c', edge: '#1f4fd0', win: [C.cyan, C.blue, C.cyan, '#9defff'], winLit: 0.26, blinkCol: C.cyan, ground: G })}</g>`;
+  b += `<g class="far">${skyline(11, { minH: 48, maxH: 132, minW: 32, maxW: 72, body: '#141826', win: ['#2c3450', '#3a4466', '#5b5236'], winLit: 0.3, blinkCol: C.red, ground: G })}</g>`;
+  b += `<g class="near">${skyline(42, { minH: 24, maxH: 92, minW: 40, maxW: 96, body: '#07080d', edge: '#39435f', win: [C.gold, C.cyan, C.gold, C.ice], winLit: 0.26, blinkCol: C.red, ground: G })}</g>`;
   // suelo
   b += rect(0, G, W, H - G, C.bg0);
   b += rect(0, G, W, 12, C.cyan, 'opacity=".5" filter="url(#glow)"');
   b += rect(0, G, W, 4, C.cyan);
   b += rect(0, G + 4, W, 2, C.deep);
   let dashes = '';
-  for (let x = 0; x < W * 2; x += 56) dashes += rect(x, G + 18, 28, 4, C.blue) + rect(x + 28, G + 32, 16, 2, C.line);
+  for (let x = 0; x < W * 2; x += 56) dashes += rect(x, G + 18, 28, 4, C.dim) + rect(x + 28, G + 32, 16, 2, C.line);
   b += `<g class="road">${dashes}</g>`;
   // héroe corriendo
-  const hy = G - 14 * 4;
-  b += `<g class="f1">${sprite(HERO_A, HERO_PAL, 120, hy, 4)}</g><g class="f2" opacity="0">${sprite(HERO_B, HERO_PAL, 120, hy - 4, 4)}</g>`;
+  const hy = G - CAT_RUN_A.length * 3;
+  b += `<g class="f1">${sprite(CAT_RUN_A, CAT_PAL, 96, hy, 3)}</g><g class="f2" opacity="0">${sprite(CAT_RUN_B, CAT_PAL, 96, hy - 3, 3)}</g>`;
   // título
   const title = PROFILE.name, ts = 8, tx = Math.round((W - tw(title, ts)) / 2), ty = 62;
   b += text(title, tx, ty, ts, C.cyan, 'filter="url(#glow)" class="pulse"');
@@ -281,9 +335,9 @@ function banner() {
   b += text(title, tx, ty, ts, 'url(#chrome)');
   b += `<g class="blink">${textC('| PRESS START', W / 2, 136, 3, C.ice, 'filter="url(#soft)"')}</g>`;
   // HUD
-  b += text('SCORE 004200', 24, 18, 2, C.cyan);
+  b += text('SCORE 004200', 24, 18, 2, C.gold);
   b += textC('STAGE 01 - GITHUB', W / 2, 18, 2, C.mute);
-  b += textR('^^^', W - 24, 18, 2, C.cyan);
+  b += textR('^^^', W - 24, 18, 2, C.red);
   b += rect(0, 0, W, H, 'url(#scan)');
   b += `<path fill-rule="evenodd" d="${notched(0, 0, W, H, 8)}${notched(4, 4, W - 8, H - 8, 8)}" fill="${C.line}"/>`;
   const css = `
@@ -319,11 +373,11 @@ function player() {
   const H = 254;
   let b = panel(14, 236, 'JUGADOR');
   // avatar
-  b += `<path d="${notched(32, 48, 152, 172, 4)}" fill="${C.bg2}"/>`;
-  b += `<path fill-rule="evenodd" d="${notched(32, 48, 152, 172, 4)}${notched(36, 52, 144, 164, 4)}" fill="${C.blue}"/>`;
+  b += `<path d="${notched(32, 48, 152, 172, 4)}" fill="#1b2030"/>`;
+  b += `<path fill-rule="evenodd" d="${notched(32, 48, 152, 172, 4)}${notched(36, 52, 144, 164, 4)}" fill="${C.dim}"/>`;
   b += stars(rng(3), 14, 150, 60).replace(/x="(\d+)"/g, (m, x) => `x="${44 + (x % 124)}"`);
-  b += `<ellipse cx="108" cy="204" rx="40" ry="5" fill="${C.cyan}" opacity=".35" filter="url(#glow)"/>`;
-  b += `<g class="bob">${sprite(HERO_A, HERO_PAL, 48, 64, 10)}</g>`;
+  b += `<ellipse cx="108" cy="212" rx="44" ry="4" fill="${C.cyan}" opacity=".3" filter="url(#glow)"/>`;
+  b += `<g class="bob">${sprite(CAT_IDLE, CAT_PAL, 54, 62, 5)}</g>`;
   // datos
   const lx = 216, vx = 380;
   [['JUGADOR', PROFILE.name, C.cyan], ['CLASE', PROFILE.playerClass, C.ice], ['ESTADO', PROFILE.status, C.ice]].forEach(([k, v, col], i) => {
@@ -332,13 +386,13 @@ function player() {
   });
   b += rect(vx + tw(PROFILE.status, 3) + 14, 50 + 64 + 4, 12, 12, C.cyan, 'class="blink" filter="url(#soft)"');
   // barras
-  const bars = [['HP', 30, C.cyan, '100/100'], ['CAFE', 24, C.blue, '80%'], ['XP', 30, C.violet, null]];
+  const bars = [['HP', 30, C.red, '100/100'], ['CAFE', 24, C.gold, '80%'], ['XP', 30, C.cyan, null]];
   bars.forEach(([k, n, col, val], i) => {
     const y = 156 + i * 26, bx = 292, bw = 362;
     b += text(k, lx, y, 2, C.mute);
     b += rect(bx - 4, y - 4, bw + 6, 22, C.line) + rect(bx - 2, y - 2, bw + 2, 18, C.bg0);
     let segs = '';
-    for (let s = 0; s < 30; s++) segs += rect(bx + s * 12, y, 10, 14, s < n ? col : '#0f1a3d');
+    for (let s = 0; s < 30; s++) segs += rect(bx + s * 12, y, 10, 14, s < n ? col : '#171b27');
     b += segs;
     if (k === 'XP') {
       b += clip(bx, y, 360, 14, rect(bx, y, 360, 14, C.bg0, 'class="xp" transform="translate(360 0)"'));
@@ -362,15 +416,15 @@ function player() {
 function inventory() {
   const H = 204, S = 88, GAP = 10, N = 8;
   const x0 = Math.round((W - (N * S + (N - 1) * GAP)) / 4) * 2;
-  const cols = [C.cyan, C.ice, C.blue, C.cyan, C.violet, C.ice];
+  const cols = [C.cyan, C.ice, C.gold, C.cyan, C.ice, C.gold];
   let b = panel(14, 186, 'INVENTARIO');
   for (let i = 0; i < N; i++) {
     const x = x0 + i * (S + GAP), y = 50, item = PROFILE.inventory[i];
     b += `<path d="${notched(x, y, S, S, 4)}" fill="${item ? C.bg2 : C.bg0}"/>`;
-    b += `<path fill-rule="evenodd" d="${notched(x, y, S, S, 4)}${notched(x + 4, y + 4, S - 8, S - 8, 2)}" fill="${item ? C.blue : C.line}"/>`;
+    b += `<path fill-rule="evenodd" d="${notched(x, y, S, S, 4)}${notched(x + 4, y + 4, S - 8, S - 8, 2)}" fill="${item ? C.dim : C.line}"/>`;
     if (item) {
       const s = item[0].length <= 2 ? 5 : item[0].length === 3 ? 4 : 3;
-      b += textC(item[0], x + S / 2 + 2, y + S / 2 - (7 * s) / 2 + 3, s, C.deep);
+      b += textC(item[0], x + S / 2 + 2, y + S / 2 - (7 * s) / 2 + 3, s, '#000');
       b += textC(item[0], x + S / 2, y + S / 2 - (7 * s) / 2 + 1, s, cols[i % cols.length]);
       b += textC(item[1], x + S / 2, y + S + 12, 2, C.mute);
     } else {
@@ -394,7 +448,7 @@ function quests() {
   let b = panel(14, 228, 'MISIONES');
   const row = (y, h, active) => {
     let o = `<path d="${notched(24, y, 792, h, 4)}" fill="${active ? C.bg2 : C.bg0}"/>`;
-    o += `<path fill-rule="evenodd" d="${notched(24, y, 792, h, 4)}${notched(26, y + 2, 788, h - 4, 2)}" fill="${active ? C.blue : C.line}"/>`;
+    o += `<path fill-rule="evenodd" d="${notched(24, y, 792, h, 4)}${notched(26, y + 2, 788, h - 4, 2)}" fill="${active ? C.cyan : C.line}"/>`;
     return o;
   };
   b += row(46, 88, true);
@@ -402,8 +456,8 @@ function quests() {
   b += text('!', 42, 73, 5, C.bg0, 'class="blink2" transform="translate(-1 0)"');
   b += text(q.title, 88, 58, 3, C.cyan);
   b += text(q.desc, 88, 90, 2, C.ice);
-  b += text(q.tags, 88, 112, 2, C.blue);
-  b += textR('@ COMPLETADA', 800, 60, 2, C.ice, 'filter="url(#soft)"');
+  b += text(q.tags, 88, 112, 2, C.gold);
+  b += textR('@ COMPLETADA', 800, 60, 2, C.gold, 'filter="url(#soft)"');
   b += textR('| CLIC PARA ENTRAR', 800, 112, 2, C.cyan, 'class="blink"');
   [[142, '??? - MISION BLOQUEADA'], [190, '??? - PROXIMAMENTE']].forEach(([y, label]) => {
     b += row(y, 40, false);
@@ -420,30 +474,27 @@ function divider() {
   for (let x = 12, i = 0; x < W - 12; x += 16, i++) {
     const mid = Math.abs(x - W / 2) < 40;
     if (mid) continue;
-    b += rect(x, 8, 8, 4, i % 2 ? C.blue : C.cyan, `class="t${1 + (i % 4)}"`);
+    b += rect(x, 8, 8, 4, i % 2 ? C.dim : C.cyan, `class="t${1 + (i % 4)}"`);
   }
-  b += `<g class="pulse">${rect(W / 2 - 2, 2, 4, 4, C.cyan)}${rect(W / 2 - 6, 6, 12, 4, C.cyan)}${rect(W / 2 - 10, 10, 20, 0, C.cyan)}${rect(W / 2 - 6, 10, 12, 4, C.ice)}${rect(W / 2 - 2, 14, 4, 4, C.cyan)}</g>`;
+  b += `<g class="pulse">${rect(W / 2 - 2, 2, 4, 4, C.cyan)}${rect(W / 2 - 6, 6, 12, 4, C.cyan)}${rect(W / 2 - 10, 10, 20, 0, C.cyan)}${rect(W / 2 - 6, 10, 12, 4, C.gold)}${rect(W / 2 - 2, 14, 4, 4, C.cyan)}</g>`;
   return svg(H, b, { label: 'divisor', notch: 0 });
 }
 
 function footer() {
-  const H = 150, G = 122;
+  const H = 116, G = 88;
   let b = rect(0, 0, W, H, C.bg0);
-  b += rect(0, 60, W, G - 60, '#070c22') + rect(0, 96, W, G - 96, '#0c173c');
-  b += stars(rng(99), 46, 100);
+  b += rect(0, 40, W, G - 40, '#090b13') + rect(0, 66, W, G - 66, '#101523');
+  b += stars(rng(99), 40, 70);
   b += rect(0, G, W, 10, C.cyan, 'opacity=".5" filter="url(#glow)"') + rect(0, G, W, 4, C.cyan) + rect(0, G + 4, W, 2, C.deep);
   let dashes = '';
-  for (let x = 0; x < W * 2; x += 56) dashes += rect(x, G + 14, 28, 4, C.blue);
+  for (let x = 0; x < W * 2; x += 56) dashes += rect(x, G + 14, 28, 4, C.dim);
   b += `<g class="road">${dashes}</g>`;
-  b += `<g class="bob">${sprite(HERO_A, HERO_PAL, 60, G - 42, 3)}</g>`;
-  const t = 'GRACIAS POR JUGAR';
-  b += textC(t, W / 2, 28, 5, C.cyan, 'filter="url(#glow)" class="pulse"');
-  b += textC(t, W / 2 + 4, 32, 5, C.deep) + textC(t, W / 2, 28, 5, 'url(#chrome)');
-  b += `<g class="blink">${textC('INSERT COIN TO CONTINUE', W / 2, 84, 2, C.ice)}</g>`;
+  b += `<g class="bob">${sprite(CAT_IDLE, CAT_PAL, 60, G - CAT_IDLE.length * 2, 2)}</g>`;
+  b += `<g class="blink">${textC('| INSERT COIN TO CONTINUE', W / 2, 40, 3, C.ice, 'filter="url(#soft)"')}</g>`;
   b += rect(0, 0, W, H, 'url(#scan)');
   b += `<path fill-rule="evenodd" d="${notched(0, 0, W, H, 8)}${notched(4, 4, W - 8, H - 8, 8)}" fill="${C.line}"/>`;
   const css = `.road{animation:scroll 5s linear infinite}@keyframes scroll{to{transform:translateX(-${W}px)}}`;
-  return svg(H, b, { css, label: 'Gracias por jugar - insert coin to continue' });
+  return svg(H, b, { css, label: 'Insert coin to continue' });
 }
 
 // ───────────────────────── Salida ─────────────────────────

@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/banner.svg" width="100%" alt="CFBONILLA — press start. Ciudad neón en pixel art de 8 bits." />
+<img src="assets/banner.svg" width="100%" alt="CFBONILLA — press start. Un gato de terno con sombrero de paja toquilla corre por una ciudad neón en pixel art." />
 
 <img src="assets/dialog.svg" width="100%" alt="Hola, viajero. Bienvenido a mi perfil. Explora mis misiones y pulsa start." />
 
@@ -16,7 +16,7 @@
 
 <img src="assets/divider.svg" width="100%" alt="" />
 
-<img src="assets/footer.svg" width="100%" alt="Gracias por jugar — insert coin to continue" />
+<img src="assets/footer.svg" width="100%" alt="Insert coin to continue" />
 
 </div>
 

@@ -480,6 +480,62 @@ function quests() {
   return svg(H, b, { label: `Quests. ${q.title}: ${q.desc} (${q.tags}). Completed.`, notch: 0 });
 }
 
+// ───────────────────────── Contribuciones ─────────────────────────
+// Lee data/contributions.json (lo genera scripts/fetch-contributions.mjs en la Action).
+function loadContributions() {
+  const file = process.env.CONTRIB_FILE || path.join(OUT, '..', 'data', 'contributions.json');
+  if (fs.existsSync(file)) return JSON.parse(fs.readFileSync(file, 'utf8'));
+  const days = [], end = new Date(); // sin datos todavía: calendario vacío
+  for (let i = 370; i >= 0; i--) days.push({ date: new Date(end - i * 864e5).toISOString().slice(0, 10), count: 0, level: 0 });
+  return { total: 0, days };
+}
+
+function contributions() {
+  const { total, days } = loadContributions();
+  const H = 216, CELL = 12, P = 14, COLS = 53, x0 = 62, y0 = 68;
+  const LV = ['#171b27', '#0e4450', '#0f7286', '#10b3cc', '#d9fbff'];
+  const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+  const wd = (d) => new Date(d + 'T00:00:00Z').getUTCDay();
+  const offset = wd(days[0].date);
+  const lastCol = Math.floor((days.length - 1 + offset) / 7), firstCol = Math.max(0, lastCol - COLS + 1);
+  let b = panel(14, H - 18, 'CONTRIBUTIONS');
+  ['MON', 'WED', 'FRI'].forEach((l, i) => (b += text(l, 20, y0 + (1 + i * 2) * P - 1, 2, C.dim)));
+  let prevMonth = -1, lastLabel = -9;
+  days.forEach((d, i) => {
+    const col = Math.floor((i + offset) / 7) - firstCol, row = wd(d.date);
+    if (col < 0) return;
+    const x = x0 + col * P, y = y0 + row * P, m = +d.date.slice(5, 7) - 1;
+    if (m !== prevMonth) {
+      if (prevMonth !== -1 && col - lastLabel >= 3 && col <= COLS - 3) { b += text(MONTHS[m], x0 + (row ? col + 1 : col) * P, 48, 2, C.mute); lastLabel = col; }
+      prevMonth = m;
+    }
+    b += `<rect x="${x}" y="${y}" width="${CELL}" height="${CELL}" fill="${LV[d.level]}"${d.level === 4 ? ` class="t${1 + (i % 4)}"` : ''}/>`;
+    if (d.level >= 3) b += rect(x + 2, y + 2, 2, 2, '#fff', 'opacity=".7"');
+  });
+  // barrido tipo escáner
+  b += clip(x0, y0, COLS * P, 7 * P, rect(x0 - P, y0 - 2, CELL, 7 * P + 2, C.ice, 'opacity=".16" class="scanx"'));
+  // marcador
+  let best = 0, run = 0, streak = 0;
+  days.forEach((d) => { run = d.count > 0 ? run + 1 : 0; best = Math.max(best, run); });
+  for (let i = days.length - 1; i >= 0; i--) {
+    if (days[i].count > 0) streak++;
+    else if (i !== days.length - 1) break; // hoy puede seguir en cero sin romper la racha
+  }
+  const pad = (n, w) => String(n).padStart(w, '0');
+  const sy = 180;
+  let sx = x0;
+  [['TOTAL', pad(total, 4), C.gold], ['STREAK', pad(streak, 3), C.cyan], ['BEST', pad(best, 3), C.red]].forEach(([k, v, col]) => {
+    b += text(k, sx, sy, 2, C.dim) + text(v, sx + tw(k, 2) + 10, sy, 2, col);
+    sx += tw(k, 2) + 10 + tw(v, 2) + 34;
+  });
+  const lx = x0 + COLS * P - 2 - tw('MORE', 2);
+  b += text('MORE', lx, sy, 2, C.dim);
+  LV.forEach((c, i) => (b += rect(lx - 12 - (5 - i) * P, sy + 1, CELL, CELL, c)));
+  b += textR('LESS', lx - 12 - 5 * P - 10, sy, 2, C.dim);
+  const css = `.scanx{animation:scanx 9s steps(${COLS + 1}) infinite}@keyframes scanx{to{transform:translateX(${(COLS + 1) * P}px)}}`;
+  return svg(H, b, { css, label: `Contributions: ${total} in the last year. Current streak ${streak} days, best ${best} days.`, notch: 0 });
+}
+
 // ───────────────────────── Divisor y pie ─────────────────────────
 function divider() {
   const H = 20;
@@ -513,7 +569,7 @@ function footer() {
 // ───────────────────────── Salida ─────────────────────────
 fs.mkdirSync(OUT, { recursive: true });
 const files = {
-  banner, dialog, player, quests, divider, footer,
+  banner, dialog, player, quests, contributions, divider, footer,
   'inventory-design': () => inventory('DESIGN WORKSHOP', PROFILE.design),
   'inventory-code': () => inventory('CODE', PROFILE.code),
 };

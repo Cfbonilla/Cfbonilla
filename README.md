@@ -16,6 +16,8 @@
   <img src="assets/quests.svg" width="100%" alt="Quests — evento-entradas: event ticketing system with unique codes and QR (Node.js, Express, SQLite). Click to enter." />
 </a>
 
+<img src="assets/contributions.svg" width="100%" alt="Contribution calendar for the last year, in pixel art. Updated daily." />
+
 <img src="assets/divider.svg" width="100%" alt="" />
 
 <img src="assets/footer.svg" width="100%" alt="Insert coin to continue" />
